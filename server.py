@@ -31,6 +31,7 @@ HOST = os.environ.get("HOST", "0.0.0.0")
 
 # MOEX API
 MOEX_API_BASE = "https://apim.moex.com/iss/analyticalproducts/futoi"
+MOEX_ISS_BASE = "https://iss.moex.com/iss"
 API_KEY = ""
 
 # Zugangsschutz: ACCESS_TOKEN via ENV setzen.
@@ -283,7 +284,14 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     def handle_api_request(self):
         try:
             api_path = self.path[5:]  # '/api/' entfernen
-            moex_url = f"{MOEX_API_BASE}/{api_path}"
+
+            # Check if it's a price/ISS request (e.g. /api/iss/...)
+            if api_path.startswith('iss/'):
+                iss_path = api_path[4:]  # 'iss/' entfernen
+                moex_url = f"{MOEX_ISS_BASE}/{iss_path}"
+            else:
+                moex_url = f"{MOEX_API_BASE}/{api_path}"
+
             print(f"-> Proxy: {moex_url}")
 
             req = urllib.request.Request(moex_url)

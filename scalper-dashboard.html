@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Скальпер Дашборд - Si-12.26</title>
+    <title>Scalper Dashboard - Si (USD/RUB Futures)</title>
+    <!-- Chart.js + Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -361,6 +366,187 @@
             color: #ffc107;
         }
 
+        /* ── Chart Section ── */
+        .chart-section {
+            background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #2d3548;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4fc3f7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chart-toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            border: 1px solid #2d3548;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .chart-toggle-group:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .chart-toggle-group.disabled {
+            opacity: 0.35;
+        }
+
+        .chart-toggle-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .chart-toggle-label {
+            font-size: 12px;
+            color: #b0bec5;
+            white-space: nowrap;
+        }
+
+        .chart-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #3d4559;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            color: #90a4ae;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .chart-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+
+        .chart-btn.active {
+            background: #4fc3f7;
+            color: #0a0e1a;
+            border-color: #4fc3f7;
+            font-weight: 600;
+        }
+
+        .chart-canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 420px;
+        }
+
+        .chart-canvas-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* ── Summary Table ── */
+        .oi-summary-table-wrapper {
+            margin-top: 16px;
+            overflow-x: auto;
+        }
+
+        .oi-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .oi-summary-table th {
+            background: rgba(79, 195, 247, 0.08);
+            color: #4fc3f7;
+            padding: 10px 14px;
+            text-align: right;
+            font-weight: 600;
+            border-bottom: 2px solid #2d3548;
+            white-space: nowrap;
+        }
+
+        .oi-summary-table th:first-child {
+            text-align: left;
+        }
+
+        .oi-summary-table td {
+            padding: 10px 14px;
+            text-align: right;
+            border-bottom: 1px solid #2d3548;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+        }
+
+        .oi-summary-table td:first-child {
+            text-align: left;
+            color: #b0bec5;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-weight: 600;
+        }
+
+        .oi-summary-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .oi-summary-table .group-header td {
+            background: rgba(79, 195, 247, 0.05);
+            font-weight: 700;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 14px;
+        }
+
+        .divergence-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .divergence-badge.active {
+            background: rgba(255, 235, 59, 0.2);
+            color: #fdd835;
+            border: 1px solid rgba(255, 235, 59, 0.3);
+        }
+
+        .divergence-badge.inactive {
+            background: rgba(158, 158, 158, 0.1);
+            color: #757575;
+            border: 1px solid rgba(158, 158, 158, 0.2);
+        }
+
         /* Footer */
         .footer {
             background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
@@ -520,8 +706,8 @@
         <div class="header">
             <div class="header-left">
                 <div class="instrument-info">
-                    <div class="instrument-name">Si-12.26</div>
-                    <div class="instrument-description">Фьючерсный контракт на курс доллар США - рубль</div>
+                    <div class="instrument-name">Si (USD/RUB)</div>
+                    <div class="instrument-description">Открытые позиции по фьючерсным контрактам на курс доллар США - рубль (все контракты)</div>
                 </div>
             </div>
             <div class="header-right">
@@ -538,7 +724,7 @@
 
         <!-- Main Grid -->
         <div class="main-grid">
-            <!-- Physical Persons (FIZ) -->
+            <!-- Individuals (FIZ) -->
             <div class="position-card">
                 <div class="card-header">
                     <div class="card-title">
@@ -549,7 +735,7 @@
                         </div>
                         Физические лица
                     </div>
-                    <button class="expand-btn" onclick="toggleDetails('fiz')">
+                    <button class="expand-btn" onclick="toggleDetails('fiz', this)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
                             <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
                         </svg>
@@ -649,7 +835,7 @@
                         </div>
                         Юридические лица
                     </div>
-                    <button class="expand-btn" onclick="toggleDetails('yur')">
+                    <button class="expand-btn" onclick="toggleDetails('yur', this)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
                             <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
                         </svg>
@@ -719,6 +905,103 @@
             </div>
         </div>
 
+        <!-- ── OI Chart Section ── -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#4fc3f7">
+                        <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                    </svg>
+                    <span id="chartTitleText">Открытый интерес (ОИ) — Сегодня</span>
+                </div>
+                <div class="chart-controls">
+                    <!-- Time range buttons -->
+                    <button class="chart-btn active" onclick="setChartRange('today')" id="range-today" title="Сегодня">Сегодня</button>
+                    <button class="chart-btn" onclick="setChartRange('yesterday')" id="range-yesterday" title="Вчера">Вчера</button>
+                    <button class="chart-btn" onclick="setChartRange('3days')" id="range-3days" title="Последние 3 дня">3 дня</button>
+                    <button class="chart-btn" onclick="setChartRange('week')" id="range-week" title="Последняя неделя">Неделя</button>
+                    <button class="chart-btn" onclick="setChartRange('2weeks')" id="range-2weeks" title="Последние 2 недели">2 нед</button>
+                    
+                    <span style="color: #3d4559; margin: 0 4px;">|</span>
+                    
+                    <!-- Toggle buttons -->
+                    <div class="chart-toggle-group" onclick="toggleChartLine('price')" id="toggle-price" title="Цена (Si)">
+                        <div class="chart-toggle-dot" style="background: #e0e0e0;"></div>
+                        <span class="chart-toggle-label">Цена</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('fizLong')" id="toggle-fizLong" title="Физлица Лонг">
+                        <div class="chart-toggle-dot" style="background: #66bb6a;"></div>
+                        <span class="chart-toggle-label">Физ Лонг</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('fizShort')" id="toggle-fizShort" title="Физлица Шорт">
+                        <div class="chart-toggle-dot" style="background: #a5d6a7;"></div>
+                        <span class="chart-toggle-label">Физ Шорт</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('yurLong')" id="toggle-yurLong" title="Юрлица Лонг">
+                        <div class="chart-toggle-dot" style="background: #ef5350;"></div>
+                        <span class="chart-toggle-label">Юр Лонг</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('yurShort')" id="toggle-yurShort" title="Юрлица Шорт">
+                        <div class="chart-toggle-dot" style="background: #ef9a9a;"></div>
+                        <span class="chart-toggle-label">Юр Шорт</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('divergence')" id="toggle-divergence" title="Подсветка дивергенции">
+                        <div class="chart-toggle-dot" style="background: #fdd835;"></div>
+                        <span class="chart-toggle-label">Дивергенция</span>
+                    </div>
+                    <!-- Zoom reset -->
+                    <button class="chart-btn" onclick="resetChartZoom()" title="Сбросить приближение">⟲ Сброс</button>
+                </div>
+            </div>
+
+            <div class="chart-canvas-wrapper">
+                <canvas id="oiChart"></canvas>
+            </div>
+
+            <!-- Summary Table -->
+            <div class="oi-summary-table-wrapper">
+                <table class="oi-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Группа / Позиция</th>
+                            <th>Лонг</th>
+                            <th>Шорт</th>
+                            <th>Нетто</th>
+                            <th>Δ Лонг</th>
+                            <th>Δ Шорт</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="group-header"><td colspan="6">Физические лица (розница)</td></tr>
+                        <tr>
+                            <td>Физлица</td>
+                            <td class="long-value" id="tblFizLong">--</td>
+                            <td class="short-value" id="tblFizShort">--</td>
+                            <td class="net-value" id="tblFizNet">--</td>
+                            <td id="tblFizDeltaLong">--</td>
+                            <td id="tblFizDeltaShort">--</td>
+                        </tr>
+                        <tr class="group-header"><td colspan="6">Юридические лица (институционалы)</td></tr>
+                        <tr>
+                            <td>Юрлица</td>
+                            <td class="long-value" id="tblYurLong">--</td>
+                            <td class="short-value" id="tblYurShort">--</td>
+                            <td class="net-value" id="tblYurNet">--</td>
+                            <td id="tblYurDeltaLong">--</td>
+                            <td id="tblYurDeltaShort">--</td>
+                        </tr>
+                        <tr class="group-header"><td colspan="6">Дивергенция</td></tr>
+                        <tr>
+                            <td>Статус</td>
+                            <td colspan="5" id="tblDivergence">
+                                <span class="divergence-badge inactive">Нет данных</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Footer -->
         <div class="footer">
             <div class="footer-left">
@@ -767,41 +1050,81 @@
     </div>
 
     <script>
+        // ──────────────────────────────────────────────
         // Configuration
-        const UPDATE_INTERVAL = 10000; // 10 seconds
-        const TICKER = 'si'; // Si contract (lowercase for API)
-        
+        // ──────────────────────────────────────────────
+        const UPDATE_INTERVAL = 30000; // 30 seconds (poll for new MOEX data)
+        const TICKER = 'si';
+
         let apiKey = localStorage.getItem('moexApiKey') || '';
         let updateTimer = null;
-        let countdownTimer = null;
-        let countdown = 10;
 
-        // Get Moscow time (UTC+3)
+        // ──────────────────────────────────────────────
+        // OI History storage (intraday)
+        // ──────────────────────────────────────────────
+        const oiHistory = {
+            timestamps: [],
+            fizLong: [],
+            fizShort: [],
+            yurLong: [],
+            yurShort: [],
+            price: []
+        };
+
+        // Track previous values for delta calculation
+        let prevFizData = null;
+        let prevYurData = null;
+
+        // Track last MOEX update time
+        let lastMOEXUpdate = null;
+
+        // Current chart time range
+        let currentRange = 'today'; // 'today', 'yesterday', '3days', 'week', '2weeks'
+        let isAutoRefresh = true; // Auto-refresh only for 'today'
+
+        // Chart visibility state
+        const chartVisibility = {
+            price: true,
+            fizLong: true,
+            fizShort: true,
+            yurLong: true,
+            yurShort: true,
+            divergence: true
+        };
+
+        let oiChart = null;
+
+        // ──────────────────────────────────────────────
+        // Time helpers
+        // ──────────────────────────────────────────────
         function getMoscowTime() {
             const now = new Date();
-            // Use built-in timezone support for accurate Moscow time
             const moscowTimeStr = now.toLocaleString('en-US', { timeZone: 'Europe/Moscow' });
             return new Date(moscowTimeStr);
         }
 
-        // Get date string in YYYY-MM-DD format (Moscow time)
         function getMoscowDate(date = null) {
             const moscowTime = date || getMoscowTime();
             return moscowTime.toISOString().split('T')[0];
         }
 
-        // Initialize
+        // ──────────────────────────────────────────────
+        // Initialization
+        // ──────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
             if (!apiKey) {
                 document.getElementById('apiModal').classList.add('active');
             } else {
                 startDataFetching();
             }
+            initChart();
             updateTime();
             setInterval(updateTime, 1000);
         });
 
-        // Modal functions
+        // ──────────────────────────────────────────────
+        // Modal
+        // ──────────────────────────────────────────────
         function closeModal() {
             document.getElementById('apiModal').classList.remove('active');
             apiKey = document.getElementById('apiKeyInput').value.trim();
@@ -815,11 +1138,11 @@
             closeModal();
         }
 
+        // ──────────────────────────────────────────────
         // Toggle detailed view
-        function toggleDetails(type) {
+        // ──────────────────────────────────────────────
+        function toggleDetails(type, btn) {
             const details = document.getElementById(`${type}Details`);
-            const btn = event.target;
-            
             if (details.classList.contains('active')) {
                 details.classList.remove('active');
                 btn.classList.remove('active');
@@ -829,61 +1152,222 @@
             }
         }
 
-        // Update current time (Moscow time)
+        // ──────────────────────────────────────────────
+        // Time display
+        // ──────────────────────────────────────────────
         function updateTime() {
             const moscowTime = getMoscowTime();
             const timeStr = moscowTime.toLocaleTimeString('ru-RU', { hour12: false });
             document.getElementById('currentTime').textContent = timeStr + ' (МСК)';
+
+            // Update "last update" display
+            updateLastUpdateTime();
+
+            // Update countdown to next 5-min MOEX update
+            updateCountdownToNextUpdate();
         }
 
-        // Format number with spaces
+        // Format time duration in Russian ("X минут(ы) и Y секунд(ы) назад")
+        function formatDurationRussian(totalSeconds) {
+            if (totalSeconds < 0) totalSeconds = 0;
+
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            function pluralize(n, one, few, many) {
+                const mod10 = n % 10;
+                const mod100 = n % 100;
+                if (mod100 >= 11 && mod100 <= 19) return many;
+                if (mod10 === 1) return one;
+                if (mod10 >= 2 && mod10 <= 4) return few;
+                return many;
+            }
+
+            let parts = [];
+            if (minutes > 0) {
+                parts.push(`${minutes} ${pluralize(minutes, 'минуту', 'минуты', 'минут')}`);
+            }
+            if (seconds > 0 || minutes === 0) {
+                parts.push(`${seconds} ${pluralize(seconds, 'секунду', 'секунды', 'секунд')}`);
+            }
+
+            return parts.join(' и ');
+        }
+
+        // Update "Последнее обновление" display
+        function updateLastUpdateTime() {
+            const el = document.getElementById('lastUpdate');
+            if (!lastMOEXUpdate) {
+                el.textContent = '--';
+                return;
+            }
+
+            const now = getMoscowTime();
+            const diffMs = now.getTime() - lastMOEXUpdate.getTime();
+            const diffSec = Math.floor(diffMs / 1000);
+
+            el.textContent = formatDurationRussian(diffSec) + ' назад';
+        }
+
+        // Calculate next 5-minute MOEX update mark and show countdown
+        function updateCountdownToNextUpdate() {
+            const el = document.getElementById('timerCountdown');
+
+            if (!lastMOEXUpdate) {
+                el.textContent = '--';
+                return;
+            }
+
+            // MOEX updates at ~5 minute intervals.
+            // Next update = last update + 5 minutes
+            const nextUpdate = new Date(lastMOEXUpdate.getTime() + 5 * 60 * 1000);
+            const now = getMoscowTime();
+            let remainSec = Math.floor((nextUpdate.getTime() - now.getTime()) / 1000);
+
+            if (remainSec < 0) remainSec = 0;
+
+            el.textContent = formatDurationRussian(remainSec);
+        }
+
+        // ──────────────────────────────────────────────
+        // Format number
+        // ──────────────────────────────────────────────
         function formatNumber(num) {
-            if (num === null || num === undefined) return '--';
+            if (num === null || num === undefined || isNaN(num)) return '--';
             return num.toLocaleString('ru-RU').replace(/,/g, ' ');
         }
 
-        // Fetch data from MOEX API (via local proxy)
-        async function fetchData() {
+        function formatDelta(num) {
+            if (num === null || num === undefined || isNaN(num)) return '--';
+            const sign = num > 0 ? '+' : '';
+            return sign + formatNumber(num);
+        }
+
+        // ──────────────────────────────────────────────
+        // Chart range selection
+        // ──────────────────────────────────────────────
+        function setChartRange(range) {
+            currentRange = range;
+            isAutoRefresh = (range === 'today');
+
+            // Update button states
+            document.querySelectorAll('[id^="range-"]').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('range-' + range).classList.add('active');
+
+            // Update chart title
+            const titles = {
+                'today': 'Открытый интерес (ОИ) — Сегодня',
+                'yesterday': 'Открытый интерес (ОИ) — Вчера',
+                '3days': 'Открытый интерес (ОИ) — Последние 3 дня',
+                'week': 'Открытый интерес (ОИ) — Последняя неделя',
+                '2weeks': 'Открытый интерес (ОИ) — Последние 2 недели'
+            };
+            document.getElementById('chartTitleText').textContent = titles[range] || titles['today'];
+
+            // Fetch data for the new range
+            fetchRangeData();
+        }
+
+        // Calculate date range based on selected range
+        function getDateRange() {
+            const moscowTime = getMoscowTime();
+            const today = getMoscowDate(moscowTime);
+            let fromDate;
+
+            switch (currentRange) {
+                case 'yesterday':
+                    const yesterday = new Date(moscowTime);
+                    yesterday.setDate(yesterday.getDate() - 1);
+                    fromDate = getMoscowDate(yesterday);
+                    return { from: fromDate, till: fromDate };
+                
+                case '3days':
+                    const threeDaysAgo = new Date(moscowTime);
+                    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                    fromDate = getMoscowDate(threeDaysAgo);
+                    return { from: fromDate, till: today };
+                
+                case 'week':
+                    const weekAgo = new Date(moscowTime);
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    fromDate = getMoscowDate(weekAgo);
+                    return { from: fromDate, till: today };
+                
+                case '2weeks':
+                    const twoWeeksAgo = new Date(moscowTime);
+                    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+                    fromDate = getMoscowDate(twoWeeksAgo);
+                    return { from: fromDate, till: today };
+                
+                case 'today':
+                default:
+                    const todayDate = new Date(moscowTime);
+                    todayDate.setDate(todayDate.getDate() - 1); // Include yesterday in case today has no data yet
+                    fromDate = getMoscowDate(todayDate);
+                    return { from: fromDate, till: today };
+            }
+        }
+
+        // Fetch data for the selected range
+        async function fetchRangeData() {
             try {
-                const moscowTime = getMoscowTime();
-                const today = getMoscowDate();
+                const { from, till } = getDateRange();
                 
-                // Try to get latest data from last 3 days first
-                const threeDaysAgo = new Date(moscowTime);
-                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-                const fromDate = getMoscowDate(threeDaysAgo);
-                
-                let url = `/api/securities/${TICKER}.json?from=${fromDate}&till=${today}&latest=1`;
-                
-                console.log('Fetching data from', fromDate, 'to', today);
+                // Fetch OI data
+                let url = `/api/securities/${TICKER}.json?from=${from}&till=${till}`;
                 let response = await fetch(url);
                 let data = await response.json();
 
-                // Check for API error messages
+                // Check for API error
                 if (data.futoi && data.futoi.columns && data.futoi.columns[0] === 'ERROR_MESSAGE') {
                     const errorMsg = data.futoi.data[0][0];
                     console.warn('API Error:', errorMsg);
+                } else if (data.futoi && data.futoi.data && data.futoi.data.length > 0) {
+                    processOITimeSeries(data.futoi);
                     
-                    // If error, try wider range (7 days)
-                    if (errorMsg.includes('Invalid date') || errorMsg.includes('Free users')) {
-                        console.log('Trying wider range (7 days)...');
-                        const sevenDaysAgo = new Date(moscowTime);
-                        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-                        const wideFromDate = getMoscowDate(sevenDaysAgo);
-                        
-                        url = `/api/securities/${TICKER}.json?from=${wideFromDate}&till=${today}&latest=1`;
-                        response = await fetch(url);
-                        data = await response.json();
+                    // Update last update time for 'today' range
+                    if (currentRange === 'today') {
+                        updateLastUpdateTime();
                     }
+                    
+                    document.querySelector('.status-text').textContent = 'Подключено';
+                    document.querySelector('.status-dot').style.background = '#4caf50';
+                } else {
+                    console.warn('No valid data available for range:', currentRange);
+                    document.querySelector('.status-text').textContent = 'Нет данных';
+                    document.querySelector('.status-dot').style.background = '#ff9800';
                 }
 
-                if (data.futoi && data.futoi.data && data.futoi.data.length > 0 && 
+            } catch (error) {
+                console.error('Error fetching range data:', error);
+                document.querySelector('.status-text').textContent = 'Ошибка';
+                document.querySelector('.status-dot').style.background = '#f44336';
+            }
+        }
+
+        // ──────────────────────────────────────────────
+        // Fetch OI data (full intraday, no latest=1)
+        // ──────────────────────────────────────────────
+        async function fetchData() {
+            // Only auto-refresh for 'today' range
+            if (!isAutoRefresh) return;
+
+            try {
+                const { from, till } = getDateRange();
+
+                // Fetch OI data (without latest=1 to get full intraday timeseries)
+                let url = `/api/securities/${TICKER}.json?from=${from}&till=${till}`;
+                let response = await fetch(url);
+                let data = await response.json();
+
+                // Check for API error
+                if (data.futoi && data.futoi.columns && data.futoi.columns[0] === 'ERROR_MESSAGE') {
+                    const errorMsg = data.futoi.data[0][0];
+                    console.warn('API Error:', errorMsg);
+                } else if (data.futoi && data.futoi.data && data.futoi.data.length > 0 &&
                     data.futoi.columns[0] !== 'ERROR_MESSAGE') {
-                    processData(data.futoi);
-                    document.getElementById('lastUpdate').textContent = 
-                        moscowTime.toLocaleTimeString('ru-RU', { hour12: false }) + ' (МСК)';
-                    
-                    // Update status
+                    processOITimeSeries(data.futoi);
+                    updateLastUpdateTime();
                     document.querySelector('.status-text').textContent = 'Подключено';
                     document.querySelector('.status-dot').style.background = '#4caf50';
                 } else {
@@ -891,6 +1375,10 @@
                     document.querySelector('.status-text').textContent = 'Нет данных';
                     document.querySelector('.status-dot').style.background = '#ff9800';
                 }
+
+                // Also try to fetch the latest snapshot for the cards
+                await fetchLatestSnapshot();
+
             } catch (error) {
                 console.error('Error fetching data:', error);
                 document.querySelector('.status-text').textContent = 'Ошибка';
@@ -898,12 +1386,122 @@
             }
         }
 
-        // Process and display data
-        function processData(futoiData) {
+        // Fetch latest snapshot (for the top cards)
+        async function fetchLatestSnapshot() {
+            try {
+                const moscowTime = getMoscowTime();
+                const today = getMoscowDate();
+                const threeDaysAgo = new Date(moscowTime);
+                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                const fromDate = getMoscowDate(threeDaysAgo);
+
+                let url = `/api/securities/${TICKER}.json?from=${fromDate}&till=${today}&latest=1`;
+                let response = await fetch(url);
+                let data = await response.json();
+
+                if (data.futoi && data.futoi.data && data.futoi.data.length > 0 &&
+                    data.futoi.columns[0] !== 'ERROR_MESSAGE') {
+                    processLatestSnapshot(data.futoi);
+                }
+            } catch (e) {
+                // Silent fail for snapshot
+            }
+        }
+
+        // ──────────────────────────────────────────────
+        // Process OI timeseries for the chart
+        // ──────────────────────────────────────────────
+        function processOITimeSeries(futoiData) {
             const columns = futoiData.columns;
             const data = futoiData.data;
 
-            // Find indices
+            const tradedateIdx = columns.indexOf('tradedate');
+            const tradetimeIdx = columns.indexOf('tradetime');
+            const clgroupIdx = columns.indexOf('clgroup');
+            const posLongIdx = columns.indexOf('pos_long');
+            const posShortIdx = columns.indexOf('pos_short');
+
+            if (tradedateIdx < 0 || tradetimeIdx < 0 || clgroupIdx < 0) {
+                console.warn('Missing required columns for timeseries');
+                return;
+            }
+
+            // Group data by timestamp
+            const timeMap = new Map(); // key: "YYYY-MM-DD HH:MM:SS" -> { fizLong, fizShort, yurLong, yurShort }
+
+            const today = getMoscowDate();
+
+            for (const row of data) {
+                const tradedate = row[tradedateIdx];
+                const tradetime = row[tradetimeIdx];
+                const clgroup = row[clgroupIdx];
+                const posLong = row[posLongIdx] || 0;
+                const posShort = row[posShortIdx] || 0;
+
+                const timeKey = `${tradedate} ${tradetime}`;
+
+                if (!timeMap.has(timeKey)) {
+                    timeMap.set(timeKey, { fizLong: 0, fizShort: 0, yurLong: 0, yurShort: 0 });
+                }
+
+                const entry = timeMap.get(timeKey);
+                if (clgroup === 'FIZ') {
+                    entry.fizLong = posLong;
+                    entry.fizShort = Math.abs(posShort);
+                } else if (clgroup === 'YUR') {
+                    entry.yurLong = posLong;
+                    entry.yurShort = Math.abs(posShort);
+                }
+            }
+
+            // Sort by time and rebuild arrays
+            const sortedKeys = Array.from(timeMap.keys()).sort();
+
+            // Rebuild history from sorted data
+            oiHistory.timestamps = [];
+            oiHistory.fizLong = [];
+            oiHistory.fizShort = [];
+            oiHistory.yurLong = [];
+            oiHistory.yurShort = [];
+
+            for (const key of sortedKeys) {
+                const entry = timeMap.get(key);
+                // Parse the time string to Date
+                const parts = key.split(' ');
+                const dateParts = parts[0].split('-');
+                const timeParts = parts[1].split(':');
+                const dt = new Date(
+                    parseInt(dateParts[0]),
+                    parseInt(dateParts[1]) - 1,
+                    parseInt(dateParts[2]),
+                    parseInt(timeParts[0]),
+                    parseInt(timeParts[1]),
+                    parseInt(timeParts[2] || 0)
+                );
+
+                oiHistory.timestamps.push(dt);
+                oiHistory.fizLong.push(entry.fizLong);
+                oiHistory.fizShort.push(entry.fizShort);
+                oiHistory.yurLong.push(entry.yurLong);
+                oiHistory.yurShort.push(entry.yurShort);
+            }
+
+            // Save last MOEX update time (from the last data point)
+            if (oiHistory.timestamps.length > 0) {
+                lastMOEXUpdate = oiHistory.timestamps[oiHistory.timestamps.length - 1];
+            }
+
+            updateChart();
+            updateSummaryTable();
+        }
+
+        // ──────────────────────────────────────────────
+        // Process latest snapshot (for the top cards)
+        // ──────────────────────────────────────────────
+        function processLatestSnapshot(futoiData) {
+            const columns = futoiData.columns;
+            const data = futoiData.data;
+
             const clgroupIdx = columns.indexOf('clgroup');
             const posLongIdx = columns.indexOf('pos_long');
             const posShortIdx = columns.indexOf('pos_short');
@@ -914,62 +1512,61 @@
             let fizData = null;
             let yurData = null;
 
-            // Find FIZ and YUR data
             for (const row of data) {
                 const clgroup = row[clgroupIdx];
-                if (clgroup === 'FIZ') {
-                    fizData = {
-                        posLong: row[posLongIdx],
-                        posShort: row[posShortIdx],
-                        pos: row[posIdx],
-                        posLongNum: row[posLongNumIdx],
-                        posShortNum: row[posShortNumIdx]
-                    };
-                } else if (clgroup === 'YUR') {
-                    yurData = {
-                        posLong: row[posLongIdx],
-                        posShort: row[posShortIdx],
-                        pos: row[posIdx],
-                        posLongNum: row[posLongNumIdx],
-                        posShortNum: row[posShortNumIdx]
-                    };
-                }
+                const entry = {
+                    posLong: row[posLongIdx],
+                    posShort: row[posShortIdx],
+                    pos: row[posIdx],
+                    posLongNum: row[posLongNumIdx],
+                    posShortNum: row[posShortNumIdx]
+                };
+                if (clgroup === 'FIZ') fizData = entry;
+                else if (clgroup === 'YUR') yurData = entry;
             }
 
-            // Update FIZ (Physical Persons)
+            // Update FIZ display
             if (fizData) {
                 document.getElementById('fizLong').textContent = formatNumber(fizData.posLong);
-                document.getElementById('fizShort').textContent = formatNumber(fizData.posShort);
+                document.getElementById('fizShort').textContent = formatNumber(Math.abs(fizData.posShort));
                 document.getElementById('fizNet').textContent = formatNumber(fizData.pos);
 
                 document.getElementById('fizLongVolume').textContent = formatNumber(fizData.posLong);
                 document.getElementById('fizLongTraders').textContent = formatNumber(fizData.posLongNum);
-                document.getElementById('fizLongAvg').textContent = formatNumber(Math.round(fizData.posLong / fizData.posLongNum));
+                document.getElementById('fizLongAvg').textContent = formatNumber(
+                    fizData.posLongNum ? Math.round(fizData.posLong / fizData.posLongNum) : 0
+                );
 
                 document.getElementById('fizShortVolume').textContent = formatNumber(Math.abs(fizData.posShort));
                 document.getElementById('fizShortTraders').textContent = formatNumber(fizData.posShortNum);
-                document.getElementById('fizShortAvg').textContent = formatNumber(Math.round(Math.abs(fizData.posShort) / fizData.posShortNum));
+                document.getElementById('fizShortAvg').textContent = formatNumber(
+                    fizData.posShortNum ? Math.round(Math.abs(fizData.posShort) / fizData.posShortNum) : 0
+                );
             }
 
-            // Update YUR (Legal Entities)
+            // Update YUR display
             if (yurData) {
                 document.getElementById('yurLong').textContent = formatNumber(yurData.posLong);
-                document.getElementById('yurShort').textContent = formatNumber(yurData.posShort);
+                document.getElementById('yurShort').textContent = formatNumber(Math.abs(yurData.posShort));
                 document.getElementById('yurNet').textContent = formatNumber(yurData.pos);
 
                 document.getElementById('yurLongVolume').textContent = formatNumber(yurData.posLong);
                 document.getElementById('yurLongTraders').textContent = formatNumber(yurData.posLongNum);
-                document.getElementById('yurLongAvg').textContent = formatNumber(Math.round(yurData.posLong / yurData.posLongNum));
+                document.getElementById('yurLongAvg').textContent = formatNumber(
+                    yurData.posLongNum ? Math.round(yurData.posLong / yurData.posLongNum) : 0
+                );
 
                 document.getElementById('yurShortVolume').textContent = formatNumber(Math.abs(yurData.posShort));
                 document.getElementById('yurShortTraders').textContent = formatNumber(yurData.posShortNum);
-                document.getElementById('yurShortAvg').textContent = formatNumber(Math.round(Math.abs(yurData.posShort) / yurData.posShortNum));
+                document.getElementById('yurShortAvg').textContent = formatNumber(
+                    yurData.posShortNum ? Math.round(Math.abs(yurData.posShort) / yurData.posShortNum) : 0
+                );
             }
 
             // Calculate deltas
             if (fizData && yurData) {
                 const deltaLong = yurData.posLong - fizData.posLong;
-                const deltaShort = yurData.posShort - fizData.posShort;
+                const deltaShort = Math.abs(yurData.posShort) - Math.abs(fizData.posShort);
                 const deltaNet = yurData.pos - fizData.pos;
 
                 const deltaLongEl = document.getElementById('deltaLong');
@@ -980,28 +1577,427 @@
                 deltaShortEl.textContent = formatNumber(deltaShort);
                 deltaNetEl.textContent = formatNumber(deltaNet);
 
-                // Apply color classes based on value
                 deltaLongEl.className = 'delta-value ' + (deltaLong > 0 ? 'delta-positive' : deltaLong < 0 ? 'delta-negative' : 'delta-neutral');
-                deltaShortEl.className = 'delta-value ' + (deltaShort > 0 ? 'delta-positive' : deltaShort < 0 ? 'delta-negative' : 'delta-neutral');
+                deltaShortEl.className = 'delta-value ' + (deltaShort > 0 ? 'delta-positive' : deltaShort < 0 ? 'delta-negative' : deltaShort < 0 ? 'delta-negative' : 'delta-neutral');
                 deltaNetEl.className = 'delta-value ' + (deltaNet > 0 ? 'delta-positive' : deltaNet < 0 ? 'delta-negative' : 'delta-neutral');
+            }
+
+            // Update deltas from previous for summary table
+            if (prevFizData && fizData) {
+                document.getElementById('tblFizDeltaLong').textContent = formatDelta(fizData.posLong - prevFizData.posLong);
+                document.getElementById('tblFizDeltaShort').textContent = formatDelta(Math.abs(fizData.posShort) - Math.abs(prevFizData.posShort));
+                colorDeltaEl('tblFizDeltaLong', fizData.posLong - prevFizData.posLong);
+                colorDeltaEl('tblFizDeltaShort', Math.abs(fizData.posShort) - Math.abs(prevFizData.posShort));
+            }
+            if (prevYurData && yurData) {
+                document.getElementById('tblYurDeltaLong').textContent = formatDelta(yurData.posLong - prevYurData.posLong);
+                document.getElementById('tblYurDeltaShort').textContent = formatDelta(Math.abs(yurData.posShort) - Math.abs(prevYurData.posShort));
+                colorDeltaEl('tblYurDeltaLong', yurData.posLong - prevYurData.posLong);
+                colorDeltaEl('tblYurDeltaShort', Math.abs(yurData.posShort) - Math.abs(prevYurData.posShort));
+            }
+
+            prevFizData = fizData;
+            prevYurData = yurData;
+        }
+
+        function colorDeltaEl(id, val) {
+            const el = document.getElementById(id);
+            if (val > 0) el.style.color = '#4caf50';
+            else if (val < 0) el.style.color = '#f44336';
+            else el.style.color = '#ffc107';
+        }
+
+        // ──────────────────────────────────────────────
+        // Update summary table
+        // ──────────────────────────────────────────────
+        function updateSummaryTable() {
+            const len = oiHistory.timestamps.length;
+            if (len === 0) return;
+
+            const last = len - 1;
+            const fizLong = oiHistory.fizLong[last];
+            const fizShort = oiHistory.fizShort[last];
+            const yurLong = oiHistory.yurLong[last];
+            const yurShort = oiHistory.yurShort[last];
+
+            document.getElementById('tblFizLong').textContent = formatNumber(fizLong);
+            document.getElementById('tblFizShort').textContent = formatNumber(fizShort);
+            document.getElementById('tblFizNet').textContent = formatNumber(fizLong - fizShort);
+
+            document.getElementById('tblYurLong').textContent = formatNumber(yurLong);
+            document.getElementById('tblYurShort').textContent = formatNumber(yurShort);
+            document.getElementById('tblYurNet').textContent = formatNumber(yurLong - yurShort);
+
+            // Calculate deltas: change from previous data point
+            if (len >= 2) {
+                const prev = last - 1;
+                const deltaFizLong = fizLong - oiHistory.fizLong[prev];
+                const deltaFizShort = fizShort - oiHistory.fizShort[prev];
+                const deltaYurLong = yurLong - oiHistory.yurLong[prev];
+                const deltaYurShort = yurShort - oiHistory.yurShort[prev];
+
+                document.getElementById('tblFizDeltaLong').textContent = formatDelta(deltaFizLong);
+                document.getElementById('tblFizDeltaShort').textContent = formatDelta(deltaFizShort);
+                document.getElementById('tblYurDeltaLong').textContent = formatDelta(deltaYurLong);
+                document.getElementById('tblYurDeltaShort').textContent = formatDelta(deltaYurShort);
+
+                // Color-code deltas
+                colorDeltaEl('tblFizDeltaLong', deltaFizLong);
+                colorDeltaEl('tblFizDeltaShort', deltaFizShort);
+                colorDeltaEl('tblYurDeltaLong', deltaYurLong);
+                colorDeltaEl('tblYurDeltaShort', deltaYurShort);
+            }
+
+            // Check divergence: fiz and yur in opposite directions on net position
+            const fizNetDirection = fizLong - fizShort; // positive = net long
+            const yurNetDirection = yurLong - yurShort; // positive = net long
+
+            const divEl = document.getElementById('tblDivergence');
+            const isDivergence = (fizNetDirection > 0 && yurNetDirection < 0) || (fizNetDirection < 0 && yurNetDirection > 0);
+
+            if (isDivergence) {
+                const fizSide = fizNetDirection > 0 ? 'ЛОНГ' : 'ШОРТ';
+                const yurSide = yurNetDirection > 0 ? 'ЛОНГ' : 'ШОРТ';
+                divEl.innerHTML = `<span class="divergence-badge active">⚡ АКТИВНА</span>
+                    <span style="color:#b0bec5; margin-left:12px; font-size:12px;">
+                        Физ → ${fizSide} | Юр → ${yurSide}
+                    </span>`;
+            } else {
+                divEl.innerHTML = `<span class="divergence-badge inactive">Нет дивергенции</span>`;
             }
         }
 
-        // Start data fetching
+        // ──────────────────────────────────────────────
+        // Chart initialization & update
+        // ──────────────────────────────────────────────
+        function initChart() {
+            const ctx = document.getElementById('oiChart').getContext('2d');
+
+            oiChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Цена (Si)',
+                            data: [],
+                            borderColor: '#e0e0e0',
+                            backgroundColor: 'rgba(224, 224, 224, 0.05)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            yAxisID: 'yPrice',
+                            hidden: false,
+                            order: 5
+                        },
+                        {
+                            label: 'Физ Лонг',
+                            data: [],
+                            borderColor: '#66bb6a',
+                            backgroundColor: 'rgba(102, 187, 106, 0.08)',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'yOI',
+                            order: 4
+                        },
+                        {
+                            label: 'Физ Шорт',
+                            data: [],
+                            borderColor: '#a5d6a7',
+                            backgroundColor: 'rgba(165, 214, 167, 0.08)',
+                            borderWidth: 2,
+                            borderDash: [6, 3],
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'yOI',
+                            order: 3
+                        },
+                        {
+                            label: 'Юр Лонг',
+                            data: [],
+                            borderColor: '#ef5350',
+                            backgroundColor: 'rgba(239, 83, 80, 0.08)',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'yOI',
+                            order: 2
+                        },
+                        {
+                            label: 'Юр Шорт',
+                            data: [],
+                            borderColor: '#ef9a9a',
+                            backgroundColor: 'rgba(239, 154, 154, 0.08)',
+                            borderWidth: 2,
+                            borderDash: [6, 3],
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'yOI',
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                            titleColor: '#4fc3f7',
+                            bodyColor: '#e0e0e0',
+                            borderColor: '#3d4559',
+                            borderWidth: 1,
+                            padding: 12,
+                            bodyFont: { family: "'Consolas', monospace", size: 13 },
+                            callbacks: {
+                                title: function(items) {
+                                    if (items.length === 0) return '';
+                                    const d = items[0].label;
+                                    return d;
+                                },
+                                label: function(ctx) {
+                                    const val = ctx.parsed.y;
+                                    if (ctx.dataset.yAxisID === 'yPrice') {
+                                        return ` ${ctx.dataset.label}: ${formatNumber(val)}`;
+                                    }
+                                    return ` ${ctx.dataset.label}: ${formatNumber(val)}`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            pan: {
+                                enabled: true,
+                                mode: 'x'
+                            },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(79, 195, 247, 0.1)',
+                                    borderColor: 'rgba(79, 195, 247, 0.4)',
+                                    borderWidth: 1
+                                },
+                                mode: 'x'
+                            }
+                        },
+                        annotation: {
+                            annotations: {}
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                displayFormats: {
+                                    minute: 'dd.MM HH:mm',
+                                    hour: 'dd.MM HH:mm',
+                                    day: 'dd.MM.yyyy'
+                                },
+                                tooltipFormat: 'dd.MM.yyyy HH:mm:ss'
+                            },
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.04)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#90a4ae',
+                                font: { size: 11 },
+                                maxRotation: 45,
+                                autoSkipPadding: 30
+                            },
+                            title: {
+                                display: true,
+                                text: 'Время (МСК)',
+                                color: '#90a4ae',
+                                font: { size: 12 }
+                            }
+                        },
+                        yPrice: {
+                            type: 'linear',
+                            position: 'left',
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.04)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#e0e0e0',
+                                font: { size: 11, family: "'Consolas', monospace" },
+                                callback: function(val) { return formatNumber(val); }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Цена',
+                                color: '#e0e0e0',
+                                font: { size: 12 }
+                            }
+                        },
+                        yOI: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: {
+                                drawOnChartArea: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                color: '#90a4ae',
+                                font: { size: 11, family: "'Consolas', monospace" },
+                                callback: function(val) {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+                                    return val;
+                                }
+                            },
+                            title: {
+                                display: true,
+                                text: 'Открытый интерес',
+                                color: '#90a4ae',
+                                font: { size: 12 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // ──────────────────────────────────────────────
+        // Detect divergence zones and annotate chart
+        // ──────────────────────────────────────────────
+        function computeDivergenceAnnotations() {
+            const annotations = {};
+            if (!chartVisibility.divergence) return annotations;
+
+            const len = oiHistory.timestamps.length;
+            if (len < 2) return annotations;
+
+            let inDivergence = false;
+            let divStart = null;
+            let divIndex = 0;
+
+            for (let i = 0; i < len; i++) {
+                const fizNet = oiHistory.fizLong[i] - oiHistory.fizShort[i];
+                const yurNet = oiHistory.yurLong[i] - oiHistory.yurShort[i];
+
+                // Divergence: opposite net directions
+                const isDiv = (fizNet > 0 && yurNet < 0) || (fizNet < 0 && yurNet > 0);
+
+                if (isDiv && !inDivergence) {
+                    divStart = i;
+                    inDivergence = true;
+                } else if (!isDiv && inDivergence) {
+                    // End of divergence zone
+                    annotations['div_' + divIndex] = {
+                        type: 'box',
+                        xMin: oiHistory.timestamps[divStart],
+                        xMax: oiHistory.timestamps[i - 1],
+                        backgroundColor: 'rgba(253, 216, 53, 0.08)',
+                        borderColor: 'rgba(253, 216, 53, 0.25)',
+                        borderWidth: 1,
+                        borderDash: [4, 4],
+                        label: {
+                            display: false
+                        }
+                    };
+                    divIndex++;
+                    inDivergence = false;
+                }
+            }
+
+            // Close any open zone
+            if (inDivergence) {
+                annotations['div_' + divIndex] = {
+                    type: 'box',
+                    xMin: oiHistory.timestamps[divStart],
+                    xMax: oiHistory.timestamps[len - 1],
+                    backgroundColor: 'rgba(253, 216, 53, 0.08)',
+                    borderColor: 'rgba(253, 216, 53, 0.25)',
+                    borderWidth: 1,
+                    borderDash: [4, 4],
+                    label: {
+                        display: false
+                    }
+                };
+            }
+
+            return annotations;
+        }
+
+        // ──────────────────────────────────────────────
+        // Update chart data
+        // ──────────────────────────────────────────────
+        function updateChart() {
+            if (!oiChart) return;
+
+            const labels = oiHistory.timestamps;
+
+            oiChart.data.labels = labels;
+            // Price dataset (index 0) - empty for now, will be filled if price API available
+            oiChart.data.datasets[0].data = oiHistory.price.length ? oiHistory.price : [];
+            oiChart.data.datasets[1].data = oiHistory.fizLong;
+            oiChart.data.datasets[2].data = oiHistory.fizShort;
+            oiChart.data.datasets[3].data = oiHistory.yurLong;
+            oiChart.data.datasets[4].data = oiHistory.yurShort;
+
+            // Visibility
+            oiChart.data.datasets[0].hidden = !chartVisibility.price;
+            oiChart.data.datasets[1].hidden = !chartVisibility.fizLong;
+            oiChart.data.datasets[2].hidden = !chartVisibility.fizShort;
+            oiChart.data.datasets[3].hidden = !chartVisibility.yurLong;
+            oiChart.data.datasets[4].hidden = !chartVisibility.yurShort;
+
+            // Divergence annotations
+            const divAnnotations = computeDivergenceAnnotations();
+            oiChart.options.plugins.annotation.annotations = divAnnotations;
+
+            oiChart.update('none'); // 'none' = no animation for performance
+        }
+
+        // ──────────────────────────────────────────────
+        // Toggle chart lines
+        // ──────────────────────────────────────────────
+        function toggleChartLine(key) {
+            chartVisibility[key] = !chartVisibility[key];
+            const el = document.getElementById('toggle-' + key);
+            if (el) {
+                el.classList.toggle('disabled', !chartVisibility[key]);
+            }
+            updateChart();
+        }
+
+        // ──────────────────────────────────────────────
+        // Reset chart zoom
+        // ──────────────────────────────────────────────
+        function resetChartZoom() {
+            if (oiChart) {
+                oiChart.resetZoom();
+            }
+        }
+
+        // ──────────────────────────────────────────────
+        // Start periodic fetching
+        // ──────────────────────────────────────────────
         function startDataFetching() {
             fetchData();
             updateTimer = setInterval(fetchData, UPDATE_INTERVAL);
-            
-            // Start countdown
-            countdown = 10;
-            countdownTimer = setInterval(() => {
-                countdown--;
-                document.getElementById('timerCountdown').textContent = `${countdown}с`;
-                
-                if (countdown <= 0) {
-                    countdown = 10;
-                }
-            }, 1000);
+
+            // Time display + countdown updates every second (already in setInterval above)
         }
     </script>
 </body>
