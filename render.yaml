@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: moex-scalper-dashboard
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: MOEX_API_KEY
+        sync: false          # Wird manuell im Render Dashboard gesetzt
+      - key: ACCESS_TOKEN
+        sync: false          # Passwort für den Zugangsschutz
+      - key: SESSION_SECRET
+        generateValue: true  # Wird automatisch generiert

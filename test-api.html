@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест MOEX API</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e1a;
+            color: #e0e0e0;
+            padding: 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #4fc3f7;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: #1a1f2e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .label {
+            color: #90a4ae;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        .value {
+            font-family: 'Consolas', monospace;
+            font-size: 16px;
+            color: #4fc3f7;
+            padding: 10px;
+            background: #252b3d;
+            border-radius: 4px;
+            word-break: break-all;
+        }
+        .error {
+            color: #f44336;
+        }
+        .success {
+            color: #4caf50;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            background: #252b3d;
+            border: 1px solid #3d4559;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        button {
+            padding: 12px 24px;
+            background: #4fc3f7;
+            border: none;
+            border-radius: 6px;
+            color: #0a0e1a;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #29b6f6;
+        }
+        pre {
+            background: #252b3d;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 Тест MOEX FUTOI API</h1>
+    
+    <div class="section">
+        <div class="label">API Key:</div>
+        <input type="text" id="apiKey" placeholder="Введите ваш API ключ">
+        <button onclick="testAPI()">Тестировать API</button>
+    </div>
+
+    <div class="section">
+        <div class="label">Московское время:</div>
+        <div class="value" id="moscowTime">--</div>
+    </div>
+
+    <div class="section">
+        <div class="label">Дата для запроса:</div>
+        <div class="value" id="requestDate">--</div>
+    </div>
+
+    <div class="section">
+        <div class="label">URL запроса:</div>
+        <div class="value" id="requestUrl">--</div>
+    </div>
+
+    <div class="section">
+        <div class="label">Статус ответа:</div>
+        <div class="value" id="responseStatus">--</div>
+    </div>
+
+    <div class="section">
+        <div class="label">Сырой ответ API:</div>
+        <pre id="rawResponse">Нажмите "Тестировать API"</pre>
+    </div>
+
+    <div class="section">
+        <div class="label">Распарсенные данные:</div>
+        <pre id="parsedData">--</pre>
+    </div>
+
+    <script>
+        function getMoscowTime() {
+            const now = new Date();
+            const moscowTimeStr = now.toLocaleString('en-US', { timeZone: 'Europe/Moscow' });
+            return new Date(moscowTimeStr);
+        }
+
+        function getMoscowDate(date = null) {
+            const moscowTime = date || getMoscowTime();
+            const year = moscowTime.getFullYear();
+            const month = String(moscowTime.getMonth() + 1).padStart(2, '0');
+            const day = String(moscowTime.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // Update Moscow time every second
+        setInterval(() => {
+            const moscowTime = getMoscowTime();
+            document.getElementById('moscowTime').textContent = 
+                moscowTime.toLocaleString('ru-RU', { 
+                    hour12: false,
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                }) + ' (МСК)';
+        }, 1000);
+
+        async function testAPI() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+            
+            const ticker = 'si';
+            const today = getMoscowDate();
+            
+            // Calculate date range (last 3 days)
+            const threeDaysAgo = new Date();
+            threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+            const fromDate = threeDaysAgo.toISOString().split('T')[0];
+            
+            document.getElementById('requestDate').textContent = `${fromDate} до ${today}`;
+
+            const url = `/api/securities/${ticker}.json?from=${fromDate}&till=${today}&latest=1`;
+            document.getElementById('requestUrl').textContent = url;
+
+            document.getElementById('rawResponse').textContent = 'Загрузка...';
+            document.getElementById('parsedData').textContent = '--';
+
+            try {
+                const response = await fetch(url);
+
+                document.getElementById('responseStatus').textContent = 
+                    `HTTP ${response.status} ${response.statusText}`;
+                document.getElementById('responseStatus').className = 
+                    'value ' + (response.ok ? 'success' : 'error');
+
+                const data = await response.json();
+                document.getElementById('rawResponse').textContent = 
+                    JSON.stringify(data, null, 2);
+
+                // Parse and display data
+                if (data.futoi && data.futoi.data && data.futoi.data.length > 0) {
+                    if (data.futoi.columns[0] === 'ERROR_MESSAGE') {
+                        document.getElementById('parsedData').innerHTML = 
+                            '<span class="error">Ошибка API: ' + data.futoi.data[0][0] + '</span>';
+                    } else {
+                        const columns = data.futoi.columns;
+                        let parsed = 'Найдено записей: ' + data.futoi.data.length + '\n\n';
+                        
+                        data.futoi.data.forEach((row, idx) => {
+                            parsed += `--- Запись ${idx + 1} ---\n`;
+                            columns.forEach((col, colIdx) => {
+                                parsed += `${col}: ${row[colIdx]}\n`;
+                            });
+                            parsed += '\n';
+                        });
+                        
+                        document.getElementById('parsedData').textContent = parsed;
+                    }
+                } else {
+                    document.getElementById('parsedData').textContent = 'Данные не найдены';
+                }
+
+            } catch (error) {
+                document.getElementById('responseStatus').textContent = 'Ошибка запроса';
+                document.getElementById('responseStatus').className = 'value error';
+                document.getElementById('rawResponse').textContent = error.message;
+            }
+        }
+
+        // Auto-fill API key from localStorage
+        const savedApiKey = localStorage.getItem('moexApiKey');
+        if (savedApiKey) {
+            document.getElementById('apiKey').value = savedApiKey;
+        }
+
+        // Initialize Moscow time
+        const moscowTime = getMoscowTime();
+        document.getElementById('moscowTime').textContent = 
+            moscowTime.toLocaleString('ru-RU', { 
+                hour12: false,
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            }) + ' (МСК)';
+    </script>
+</body>
+</html>

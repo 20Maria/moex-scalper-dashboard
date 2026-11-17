@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Скальпер Дашборд - Si-12.26</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #0a0e1a;
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
+            padding: 20px 30px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .instrument-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .instrument-name {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4fc3f7;
+        }
+
+        .instrument-description {
+            font-size: 14px;
+            color: #90a4ae;
+            margin-top: 4px;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 8px;
+            border: 1px solid #4caf50;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #4caf50;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .status-text {
+            font-size: 14px;
+            color: #4caf50;
+        }
+
+        .last-update {
+            text-align: right;
+        }
+
+        .last-update-label {
+            font-size: 12px;
+            color: #90a4ae;
+        }
+
+        .last-update-time {
+            font-size: 16px;
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 200px 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* Position Cards */
+        .position-card {
+            background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #2d3548;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Card Icons */
+        .card-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fiz-icon {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+
+        .yur-icon {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+        }
+
+        .card-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        .expand-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #3d4559;
+            border-radius: 6px;
+            padding: 8px 12px;
+            cursor: pointer;
+            color: #90a4ae;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .expand-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+
+        .expand-btn.active {
+            background: #4fc3f7;
+            color: #0a0e1a;
+            border-color: #4fc3f7;
+        }
+
+        /* Position Summary */
+        .position-summary {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .summary-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid #2d3548;
+        }
+
+        .summary-label {
+            font-size: 12px;
+            color: #90a4ae;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-value {
+            font-size: 24px;
+            font-weight: 700;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        .long-value {
+            color: #4caf50;
+        }
+
+        .short-value {
+            color: #f44336;
+        }
+
+        .net-value {
+            color: #ffc107;
+        }
+
+        /* Detailed View */
+        .detailed-view {
+            display: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #2d3548;
+        }
+
+        .detailed-view.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .detail-section {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .detail-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: #b0bec5;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: #90a4ae;
+            font-size: 13px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+        }
+
+        /* Delta Column */
+        .delta-column {
+            background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
+            border-radius: 12px;
+            padding: 24px 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .delta-title {
+            font-size: 13px;
+            color: #b0bec5;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 1px;
+            font-weight: 600;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #2d3548;
+            line-height: 1.4;
+        }
+
+        .delta-item {
+            background: rgba(255, 255, 255, 0.04);
+            padding: 16px 12px;
+            border-radius: 10px;
+            border: 1px solid #2d3548;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .delta-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: #3d4559;
+            transform: translateY(-2px);
+        }
+
+        .delta-label {
+            font-size: 11px;
+            color: #90a4ae;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .delta-value {
+            font-size: 20px;
+            font-weight: 700;
+            font-family: 'Consolas', 'Monaco', monospace;
+            line-height: 1.2;
+        }
+
+        .delta-positive {
+            color: #4caf50;
+        }
+
+        .delta-negative {
+            color: #f44336;
+        }
+
+        .delta-neutral {
+            color: #ffc107;
+        }
+
+        /* Footer */
+        .footer {
+            background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
+            padding: 16px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .current-time {
+            font-size: 18px;
+            font-weight: 600;
+            color: #4fc3f7;
+        }
+
+        .update-timer {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: rgba(79, 195, 247, 0.1);
+            border-radius: 8px;
+            border: 1px solid #4fc3f7;
+        }
+
+        .timer-icon {
+            font-size: 16px;
+        }
+
+        .timer-text {
+            font-size: 14px;
+            color: #4fc3f7;
+        }
+
+        .timer-value {
+            font-weight: 700;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1f2e;
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid #2d3548;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #4fc3f7;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #90a4ae;
+            font-size: 28px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+
+        .modal-body {
+            line-height: 1.6;
+        }
+
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            font-size: 18px;
+            color: #90a4ae;
+        }
+
+        .spinner {
+            border: 3px solid rgba(79, 195, 247, 0.1);
+            border-top: 3px solid #4fc3f7;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin-right: 16px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .delta-column {
+                order: 3;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div class="instrument-info">
+                    <div class="instrument-name">Si-12.26</div>
+                    <div class="instrument-description">Фьючерсный контракт на курс доллар США - рубль</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span class="status-text">Подключено</span>
+                </div>
+                <div class="last-update">
+                    <div class="last-update-label">Последнее обновление</div>
+                    <div class="last-update-time" id="lastUpdate">--:--:--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Grid -->
+        <div class="main-grid">
+            <!-- Physical Persons (FIZ) -->
+            <div class="position-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon fiz-icon">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                            </svg>
+                        </div>
+                        Физические лица
+                    </div>
+                    <button class="expand-btn" onclick="toggleDetails('fiz')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                        Подробнее
+                    </button>
+                </div>
+
+                <div class="position-summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Лонг</div>
+                        <div class="summary-value long-value" id="fizLong">--</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Шорт</div>
+                        <div class="summary-value short-value" id="fizShort">--</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Нетто</div>
+                        <div class="summary-value net-value" id="fizNet">--</div>
+                    </div>
+                </div>
+
+                <div class="detailed-view" id="fizDetails">
+                    <div class="detail-grid">
+                        <div class="detail-section">
+                            <div class="detail-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="#4caf50" style="vertical-align: middle; margin-right: 6px;">
+                                    <path d="M7 14l5-5 5 5z"/>
+                                </svg>
+                                Лонг позиции
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Объём</span>
+                                <span class="detail-value long-value" id="fizLongVolume">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Кол-во трейдеров</span>
+                                <span class="detail-value" id="fizLongTraders">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Средний объём</span>
+                                <span class="detail-value" id="fizLongAvg">--</span>
+                            </div>
+                        </div>
+                        <div class="detail-section">
+                            <div class="detail-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="#f44336" style="vertical-align: middle; margin-right: 6px;">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                                Шорт позиции
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Объём</span>
+                                <span class="detail-value short-value" id="fizShortVolume">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Кол-во трейдеров</span>
+                                <span class="detail-value" id="fizShortTraders">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Средний объём</span>
+                                <span class="detail-value" id="fizShortAvg">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delta Column -->
+            <div class="delta-column">
+                <div class="delta-title">Разница<br>(ЮРЛ - ФИЗЛ)</div>
+                
+                <div class="delta-item">
+                    <div class="delta-label">Лонг</div>
+                    <div class="delta-value" id="deltaLong">--</div>
+                </div>
+                
+                <div class="delta-item">
+                    <div class="delta-label">Шорт</div>
+                    <div class="delta-value" id="deltaShort">--</div>
+                </div>
+                
+                <div class="delta-item">
+                    <div class="delta-label">Нетто</div>
+                    <div class="delta-value" id="deltaNet">--</div>
+                </div>
+            </div>
+
+            <!-- Legal Entities (YUR) -->
+            <div class="position-card">
+                <div class="card-header">
+                    <div class="card-title">
+                        <div class="card-icon yur-icon">
+                            <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z"/>
+                            </svg>
+                        </div>
+                        Юридические лица
+                    </div>
+                    <button class="expand-btn" onclick="toggleDetails('yur')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
+                            <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                        </svg>
+                        Подробнее
+                    </button>
+                </div>
+
+                <div class="position-summary">
+                    <div class="summary-item">
+                        <div class="summary-label">Лонг</div>
+                        <div class="summary-value long-value" id="yurLong">--</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Шорт</div>
+                        <div class="summary-value short-value" id="yurShort">--</div>
+                    </div>
+                    <div class="summary-item">
+                        <div class="summary-label">Нетто</div>
+                        <div class="summary-value net-value" id="yurNet">--</div>
+                    </div>
+                </div>
+
+                <div class="detailed-view" id="yurDetails">
+                    <div class="detail-grid">
+                        <div class="detail-section">
+                            <div class="detail-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="#4caf50" style="vertical-align: middle; margin-right: 6px;">
+                                    <path d="M7 14l5-5 5 5z"/>
+                                </svg>
+                                Лонг позиции
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Объём</span>
+                                <span class="detail-value long-value" id="yurLongVolume">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Кол-во трейдеров</span>
+                                <span class="detail-value" id="yurLongTraders">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Средний объём</span>
+                                <span class="detail-value" id="yurLongAvg">--</span>
+                            </div>
+                        </div>
+                        <div class="detail-section">
+                            <div class="detail-title">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="#f44336" style="vertical-align: middle; margin-right: 6px;">
+                                    <path d="M7 10l5 5 5-5z"/>
+                                </svg>
+                                Шорт позиции
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Объём</span>
+                                <span class="detail-value short-value" id="yurShortVolume">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Кол-во трейдеров</span>
+                                <span class="detail-value" id="yurShortTraders">--</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">Средний объём</span>
+                                <span class="detail-value" id="yurShortAvg">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-left">
+                <div class="current-time" id="currentTime">--:--:--</div>
+                <div class="update-timer">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="#4fc3f7" style="vertical-align: middle;">
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
+                    </svg>
+                    <span class="timer-text">Следующее обновление через</span>
+                    <span class="timer-value" id="timerCountdown">10с</span>
+                </div>
+            </div>
+            <div class="footer-right">
+                <span style="color: #90a4ae; font-size: 14px;">MOEX Algopack FUTOI</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal" id="apiModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">Настройка API</div>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 16px; color: #b0bec5;">
+                    Для получения real-time данных необходим API ключ MOEX Algopack.
+                    Без ключа данные будут задержаны на 15 дней.
+                </p>
+                <div style="margin-bottom: 16px;">
+                    <label style="display: block; margin-bottom: 8px; color: #e0e0e0; font-weight: 600;">
+                        API Key (опционально):
+                    </label>
+                    <input type="text" id="apiKeyInput" placeholder="Введите ваш API ключ" 
+                           style="width: 100%; padding: 12px; background: #252b3d; border: 1px solid #3d4559; 
+                                  border-radius: 6px; color: #e0e0e0; font-size: 14px;">
+                </div>
+                <button onclick="saveApiKey()" 
+                        style="width: 100%; padding: 12px; background: #4fc3f7; border: none; border-radius: 6px; 
+                               color: #0a0e1a; font-weight: 700; cursor: pointer; font-size: 16px;">
+                    Сохранить и начать
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const UPDATE_INTERVAL = 10000; // 10 seconds
+        const TICKER = 'si'; // Si contract (lowercase for API)
+        
+        let apiKey = localStorage.getItem('moexApiKey') || '';
+        let updateTimer = null;
+        let countdownTimer = null;
+        let countdown = 10;
+
+        // Get Moscow time (UTC+3)
+        function getMoscowTime() {
+            const now = new Date();
+            // Use built-in timezone support for accurate Moscow time
+            const moscowTimeStr = now.toLocaleString('en-US', { timeZone: 'Europe/Moscow' });
+            return new Date(moscowTimeStr);
+        }
+
+        // Get date string in YYYY-MM-DD format (Moscow time)
+        function getMoscowDate(date = null) {
+            const moscowTime = date || getMoscowTime();
+            return moscowTime.toISOString().split('T')[0];
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!apiKey) {
+                document.getElementById('apiModal').classList.add('active');
+            } else {
+                startDataFetching();
+            }
+            updateTime();
+            setInterval(updateTime, 1000);
+        });
+
+        // Modal functions
+        function closeModal() {
+            document.getElementById('apiModal').classList.remove('active');
+            apiKey = document.getElementById('apiKeyInput').value.trim();
+            if (apiKey) {
+                localStorage.setItem('moexApiKey', apiKey);
+            }
+            startDataFetching();
+        }
+
+        function saveApiKey() {
+            closeModal();
+        }
+
+        // Toggle detailed view
+        function toggleDetails(type) {
+            const details = document.getElementById(`${type}Details`);
+            const btn = event.target;
+            
+            if (details.classList.contains('active')) {
+                details.classList.remove('active');
+                btn.classList.remove('active');
+            } else {
+                details.classList.add('active');
+                btn.classList.add('active');
+            }
+        }
+
+        // Update current time (Moscow time)
+        function updateTime() {
+            const moscowTime = getMoscowTime();
+            const timeStr = moscowTime.toLocaleTimeString('ru-RU', { hour12: false });
+            document.getElementById('currentTime').textContent = timeStr + ' (МСК)';
+        }
+
+        // Format number with spaces
+        function formatNumber(num) {
+            if (num === null || num === undefined) return '--';
+            return num.toLocaleString('ru-RU').replace(/,/g, ' ');
+        }
+
+        // Fetch data from MOEX API (via local proxy)
+        async function fetchData() {
+            try {
+                const moscowTime = getMoscowTime();
+                const today = getMoscowDate();
+                
+                // Try to get latest data from last 3 days first
+                const threeDaysAgo = new Date(moscowTime);
+                threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                const fromDate = getMoscowDate(threeDaysAgo);
+                
+                let url = `/api/securities/${TICKER}.json?from=${fromDate}&till=${today}&latest=1`;
+                
+                console.log('Fetching data from', fromDate, 'to', today);
+                let response = await fetch(url);
+                let data = await response.json();
+
+                // Check for API error messages
+                if (data.futoi && data.futoi.columns && data.futoi.columns[0] === 'ERROR_MESSAGE') {
+                    const errorMsg = data.futoi.data[0][0];
+                    console.warn('API Error:', errorMsg);
+                    
+                    // If error, try wider range (7 days)
+                    if (errorMsg.includes('Invalid date') || errorMsg.includes('Free users')) {
+                        console.log('Trying wider range (7 days)...');
+                        const sevenDaysAgo = new Date(moscowTime);
+                        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                        const wideFromDate = getMoscowDate(sevenDaysAgo);
+                        
+                        url = `/api/securities/${TICKER}.json?from=${wideFromDate}&till=${today}&latest=1`;
+                        response = await fetch(url);
+                        data = await response.json();
+                    }
+                }
+
+                if (data.futoi && data.futoi.data && data.futoi.data.length > 0 && 
+                    data.futoi.columns[0] !== 'ERROR_MESSAGE') {
+                    processData(data.futoi);
+                    document.getElementById('lastUpdate').textContent = 
+                        moscowTime.toLocaleTimeString('ru-RU', { hour12: false }) + ' (МСК)';
+                    
+                    // Update status
+                    document.querySelector('.status-text').textContent = 'Подключено';
+                    document.querySelector('.status-dot').style.background = '#4caf50';
+                } else {
+                    console.warn('No valid data available');
+                    document.querySelector('.status-text').textContent = 'Нет данных';
+                    document.querySelector('.status-dot').style.background = '#ff9800';
+                }
+            } catch (error) {
+                console.error('Error fetching data:', error);
+                document.querySelector('.status-text').textContent = 'Ошибка';
+                document.querySelector('.status-dot').style.background = '#f44336';
+            }
+        }
+
+        // Process and display data
+        function processData(futoiData) {
+            const columns = futoiData.columns;
+            const data = futoiData.data;
+
+            // Find indices
+            const clgroupIdx = columns.indexOf('clgroup');
+            const posLongIdx = columns.indexOf('pos_long');
+            const posShortIdx = columns.indexOf('pos_short');
+            const posIdx = columns.indexOf('pos');
+            const posLongNumIdx = columns.indexOf('pos_long_num');
+            const posShortNumIdx = columns.indexOf('pos_short_num');
+
+            let fizData = null;
+            let yurData = null;
+
+            // Find FIZ and YUR data
+            for (const row of data) {
+                const clgroup = row[clgroupIdx];
+                if (clgroup === 'FIZ') {
+                    fizData = {
+                        posLong: row[posLongIdx],
+                        posShort: row[posShortIdx],
+                        pos: row[posIdx],
+                        posLongNum: row[posLongNumIdx],
+                        posShortNum: row[posShortNumIdx]
+                    };
+                } else if (clgroup === 'YUR') {
+                    yurData = {
+                        posLong: row[posLongIdx],
+                        posShort: row[posShortIdx],
+                        pos: row[posIdx],
+                        posLongNum: row[posLongNumIdx],
+                        posShortNum: row[posShortNumIdx]
+                    };
+                }
+            }
+
+            // Update FIZ (Physical Persons)
+            if (fizData) {
+                document.getElementById('fizLong').textContent = formatNumber(fizData.posLong);
+                document.getElementById('fizShort').textContent = formatNumber(fizData.posShort);
+                document.getElementById('fizNet').textContent = formatNumber(fizData.pos);
+
+                document.getElementById('fizLongVolume').textContent = formatNumber(fizData.posLong);
+                document.getElementById('fizLongTraders').textContent = formatNumber(fizData.posLongNum);
+                document.getElementById('fizLongAvg').textContent = formatNumber(Math.round(fizData.posLong / fizData.posLongNum));
+
+                document.getElementById('fizShortVolume').textContent = formatNumber(Math.abs(fizData.posShort));
+                document.getElementById('fizShortTraders').textContent = formatNumber(fizData.posShortNum);
+                document.getElementById('fizShortAvg').textContent = formatNumber(Math.round(Math.abs(fizData.posShort) / fizData.posShortNum));
+            }
+
+            // Update YUR (Legal Entities)
+            if (yurData) {
+                document.getElementById('yurLong').textContent = formatNumber(yurData.posLong);
+                document.getElementById('yurShort').textContent = formatNumber(yurData.posShort);
+                document.getElementById('yurNet').textContent = formatNumber(yurData.pos);
+
+                document.getElementById('yurLongVolume').textContent = formatNumber(yurData.posLong);
+                document.getElementById('yurLongTraders').textContent = formatNumber(yurData.posLongNum);
+                document.getElementById('yurLongAvg').textContent = formatNumber(Math.round(yurData.posLong / yurData.posLongNum));
+
+                document.getElementById('yurShortVolume').textContent = formatNumber(Math.abs(yurData.posShort));
+                document.getElementById('yurShortTraders').textContent = formatNumber(yurData.posShortNum);
+                document.getElementById('yurShortAvg').textContent = formatNumber(Math.round(Math.abs(yurData.posShort) / yurData.posShortNum));
+            }
+
+            // Calculate deltas
+            if (fizData && yurData) {
+                const deltaLong = yurData.posLong - fizData.posLong;
+                const deltaShort = yurData.posShort - fizData.posShort;
+                const deltaNet = yurData.pos - fizData.pos;
+
+                const deltaLongEl = document.getElementById('deltaLong');
+                const deltaShortEl = document.getElementById('deltaShort');
+                const deltaNetEl = document.getElementById('deltaNet');
+
+                deltaLongEl.textContent = formatNumber(deltaLong);
+                deltaShortEl.textContent = formatNumber(deltaShort);
+                deltaNetEl.textContent = formatNumber(deltaNet);
+
+                // Apply color classes based on value
+                deltaLongEl.className = 'delta-value ' + (deltaLong > 0 ? 'delta-positive' : deltaLong < 0 ? 'delta-negative' : 'delta-neutral');
+                deltaShortEl.className = 'delta-value ' + (deltaShort > 0 ? 'delta-positive' : deltaShort < 0 ? 'delta-negative' : 'delta-neutral');
+                deltaNetEl.className = 'delta-value ' + (deltaNet > 0 ? 'delta-positive' : deltaNet < 0 ? 'delta-negative' : 'delta-neutral');
+            }
+        }
+
+        // Start data fetching
+        function startDataFetching() {
+            fetchData();
+            updateTimer = setInterval(fetchData, UPDATE_INTERVAL);
+            
+            // Start countdown
+            countdown = 10;
+            countdownTimer = setInterval(() => {
+                countdown--;
+                document.getElementById('timerCountdown').textContent = `${countdown}с`;
+                
+                if (countdown <= 0) {
+                    countdown = 10;
+                }
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
