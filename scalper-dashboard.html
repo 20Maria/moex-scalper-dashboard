@@ -1112,11 +1112,8 @@
         // Initialization
         // ──────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
-            if (!apiKey) {
-                document.getElementById('apiModal').classList.add('active');
-            } else {
-                startDataFetching();
-            }
+            // API-Key wird serverseitig verwaltet (Proxy), kein Client-Key nötig
+            startDataFetching();
             initChart();
             updateTime();
             setInterval(updateTime, 1000);

@@ -47,7 +47,9 @@ SSL_CONTEXT = ssl.create_default_context()
 SSL_CONTEXT.check_hostname = False
 SSL_CONTEXT.verify_mode = ssl.CERT_NONE
 
-API_KEY_FILE = "api_key.txt"
+# Pfad relativ zum Script, nicht zum Working Directory
+SCRIPT_DIR = Path(__file__).parent.resolve()
+API_KEY_FILE = SCRIPT_DIR / "api_key.txt"
 
 
 def load_api_key():
@@ -192,7 +194,17 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     """HTTP Handler mit API-Proxy und einfachem Auth."""
 
+    def __init__(self, *args, **kwargs):
+        # Statische Dateien immer aus dem Script-Verzeichnis laden
+        super().__init__(*args, directory=str(SCRIPT_DIR), **kwargs)
+
     def do_GET(self):
+        # Favicon: leere Antwort, kein 404 in den Logs
+        if self.path == '/favicon.ico':
+            self.send_response(204)
+            self.end_headers()
+            return
+
         # Login-Seite braucht keinen Auth
         if self.path == '/login' or self.path == '/login/':
             self.send_login_page()
