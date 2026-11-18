@@ -3,8 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Скальпер Дашборд - Si-12.26 (ДЕМО)</title>
+    <title>Scalper Dashboard - Si (USD/RUB Futures) — ДЕМО</title>
+    <!-- Chart.js + Plugins -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@2.0.1/dist/chartjs-plugin-zoom.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
     <style>
+        /* ══════════════════════════════════════════════════
+           MOEX Scalper Dashboard — Shared Styles (inline)
+           ══════════════════════════════════════════════════ */
+
         * {
             margin: 0;
             padding: 0;
@@ -24,19 +33,6 @@
             margin: 0 auto;
         }
 
-        /* Demo Banner */
-        .demo-banner {
-            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
-            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
-        }
-
-        /* Header */
         .header {
             background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
             padding: 20px 30px;
@@ -120,7 +116,6 @@
             color: #e0e0e0;
         }
 
-        /* Main Grid */
         .main-grid {
             display: grid;
             grid-template-columns: 1fr 200px 1fr;
@@ -128,7 +123,6 @@
             margin-bottom: 20px;
         }
 
-        /* Position Cards */
         .position-card {
             background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
             border-radius: 12px;
@@ -153,7 +147,6 @@
             gap: 12px;
         }
 
-        /* Card Icons */
         .card-icon {
             width: 44px;
             height: 44px;
@@ -201,7 +194,6 @@
             border-color: #4fc3f7;
         }
 
-        /* Position Summary */
         .position-summary {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -230,19 +222,10 @@
             font-family: 'Consolas', 'Monaco', monospace;
         }
 
-        .long-value {
-            color: #4caf50;
-        }
+        .long-value { color: #4caf50; }
+        .short-value { color: #f44336; }
+        .net-value { color: #ffc107; }
 
-        .short-value {
-            color: #f44336;
-        }
-
-        .net-value {
-            color: #ffc107;
-        }
-
-        /* Detailed View */
         .detailed-view {
             display: none;
             margin-top: 20px;
@@ -256,14 +239,8 @@
         }
 
         @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .detail-grid {
@@ -292,14 +269,9 @@
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .detail-item:last-child {
-            border-bottom: none;
-        }
+        .detail-item:last-child { border-bottom: none; }
 
-        .detail-label {
-            color: #90a4ae;
-            font-size: 13px;
-        }
+        .detail-label { color: #90a4ae; font-size: 13px; }
 
         .detail-value {
             font-weight: 600;
@@ -307,7 +279,6 @@
             font-size: 14px;
         }
 
-        /* Delta Column */
         .delta-column {
             background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
             border-radius: 12px;
@@ -361,19 +332,10 @@
             line-height: 1.2;
         }
 
-        .delta-positive {
-            color: #4caf50;
-        }
+        .delta-positive { color: #4caf50; }
+        .delta-negative { color: #f44336; }
+        .delta-neutral { color: #ffc107; }
 
-        .delta-negative {
-            color: #f44336;
-        }
-
-        .delta-neutral {
-            color: #ffc107;
-        }
-
-        /* Footer */
         .footer {
             background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
             padding: 16px 30px;
@@ -416,15 +378,207 @@
             font-family: 'Consolas', 'Monaco', monospace;
         }
 
-        /* Responsive */
         @media (max-width: 1200px) {
-            .main-grid {
-                grid-template-columns: 1fr;
-            }
+            .main-grid { grid-template-columns: 1fr; }
+            .delta-column { order: 3; }
+        }
 
-            .delta-column {
-                order: 3;
-            }
+        /* ── Demo Banner ── */
+        .demo-banner {
+            background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+            box-shadow: 0 4px 12px rgba(255, 107, 53, 0.3);
+        }
+
+        /* ── Chart Section ── */
+        .chart-section {
+            background: linear-gradient(135deg, #1a1f2e 0%, #252b3d 100%);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .chart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #2d3548;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .chart-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #4fc3f7;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .chart-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .chart-toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.04);
+            border-radius: 6px;
+            border: 1px solid #2d3548;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .chart-toggle-group:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .chart-toggle-group.disabled {
+            opacity: 0.35;
+        }
+
+        .chart-toggle-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .chart-toggle-label {
+            font-size: 12px;
+            color: #b0bec5;
+            white-space: nowrap;
+        }
+
+        .chart-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #3d4559;
+            border-radius: 6px;
+            padding: 6px 14px;
+            cursor: pointer;
+            color: #90a4ae;
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .chart-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+        }
+
+        .chart-btn.active {
+            background: #4fc3f7;
+            color: #0a0e1a;
+            border-color: #4fc3f7;
+            font-weight: 600;
+        }
+
+        .chart-canvas-wrapper {
+            position: relative;
+            width: 100%;
+            height: 420px;
+        }
+
+        .chart-canvas-wrapper canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+        /* ── Summary Table ── */
+        .oi-summary-table-wrapper {
+            margin-top: 16px;
+            overflow-x: auto;
+        }
+
+        .oi-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        .oi-summary-table th {
+            background: rgba(79, 195, 247, 0.08);
+            color: #4fc3f7;
+            padding: 10px 14px;
+            text-align: right;
+            font-weight: 600;
+            border-bottom: 2px solid #2d3548;
+            white-space: nowrap;
+        }
+
+        .oi-summary-table th:first-child {
+            text-align: left;
+        }
+
+        .oi-summary-table td {
+            padding: 10px 14px;
+            text-align: right;
+            border-bottom: 1px solid #2d3548;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 14px;
+        }
+
+        .oi-summary-table td:first-child {
+            text-align: left;
+            color: #b0bec5;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-weight: 600;
+        }
+
+        .oi-summary-table tr:hover td {
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .oi-summary-table .group-header td {
+            background: rgba(79, 195, 247, 0.05);
+            font-weight: 700;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 8px 14px;
+        }
+
+        .divergence-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+        }
+
+        .divergence-badge.active {
+            background: rgba(255, 235, 59, 0.2);
+            color: #fdd835;
+            border: 1px solid rgba(255, 235, 59, 0.3);
+        }
+
+        .divergence-badge.inactive {
+            background: rgba(158, 158, 158, 0.1);
+            color: #757575;
+            border: 1px solid rgba(158, 158, 158, 0.2);
+        }
+
+        /* Footer — .timer-icon only (rest in shared.css) */
+        .timer-icon {
+            font-size: 16px;
         }
     </style>
 </head>
@@ -439,8 +593,8 @@
         <div class="header">
             <div class="header-left">
                 <div class="instrument-info">
-                    <div class="instrument-name">Si-12.26</div>
-                    <div class="instrument-description">Фьючерсный контракт на курс доллар США - рубль</div>
+                    <div class="instrument-name">Si (USD/RUB)</div>
+                    <div class="instrument-description">Открытые позиции по фьючерсным контрактам на курс доллар США - рубль (все контракты)</div>
                 </div>
             </div>
             <div class="header-right">
@@ -457,7 +611,7 @@
 
         <!-- Main Grid -->
         <div class="main-grid">
-            <!-- Physical Persons (FIZ) -->
+            <!-- Individuals (FIZ) -->
             <div class="position-card">
                 <div class="card-header">
                     <div class="card-title">
@@ -468,7 +622,7 @@
                         </div>
                         Физические лица
                     </div>
-                    <button class="expand-btn" onclick="toggleDetails('fiz')">
+                    <button class="expand-btn" onclick="toggleDetails('fiz', this)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
                             <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
                         </svg>
@@ -568,7 +722,7 @@
                         </div>
                         Юридические лица
                     </div>
-                    <button class="expand-btn" onclick="toggleDetails('yur')">
+                    <button class="expand-btn" onclick="toggleDetails('yur', this)">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="vertical-align: middle; margin-right: 4px;">
                             <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
                         </svg>
@@ -638,6 +792,103 @@
             </div>
         </div>
 
+        <!-- ── OI Chart Section ── -->
+        <div class="chart-section">
+            <div class="chart-header">
+                <div class="chart-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#4fc3f7">
+                        <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                    </svg>
+                    <span id="chartTitleText">Открытый интерес (ОИ) — Сегодня</span>
+                </div>
+                <div class="chart-controls">
+                    <!-- Time range buttons -->
+                    <button class="chart-btn active" onclick="setChartRange('today')" id="range-today" title="Сегодня">Сегодня</button>
+                    <button class="chart-btn" onclick="setChartRange('yesterday')" id="range-yesterday" title="Вчера">Вчера</button>
+                    <button class="chart-btn" onclick="setChartRange('3days')" id="range-3days" title="Последние 3 дня">3 дня</button>
+                    <button class="chart-btn" onclick="setChartRange('week')" id="range-week" title="Последняя неделя">Неделя</button>
+                    <button class="chart-btn" onclick="setChartRange('2weeks')" id="range-2weeks" title="Последние 2 недели">2 нед</button>
+                    
+                    <span style="color: #3d4559; margin: 0 4px;">|</span>
+                    
+                    <!-- Toggle buttons -->
+                    <div class="chart-toggle-group" onclick="toggleChartLine('price')" id="toggle-price" title="Цена (Si)">
+                        <div class="chart-toggle-dot" style="background: #e0e0e0;"></div>
+                        <span class="chart-toggle-label">Цена</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('fizLong')" id="toggle-fizLong" title="Физлица Лонг">
+                        <div class="chart-toggle-dot" style="background: #66bb6a;"></div>
+                        <span class="chart-toggle-label">Физ Лонг</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('fizShort')" id="toggle-fizShort" title="Физлица Шорт">
+                        <div class="chart-toggle-dot" style="background: #a5d6a7;"></div>
+                        <span class="chart-toggle-label">Физ Шорт</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('yurLong')" id="toggle-yurLong" title="Юрлица Лонг">
+                        <div class="chart-toggle-dot" style="background: #ef5350;"></div>
+                        <span class="chart-toggle-label">Юр Лонг</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('yurShort')" id="toggle-yurShort" title="Юрлица Шорт">
+                        <div class="chart-toggle-dot" style="background: #ef9a9a;"></div>
+                        <span class="chart-toggle-label">Юр Шорт</span>
+                    </div>
+                    <div class="chart-toggle-group" onclick="toggleChartLine('divergence')" id="toggle-divergence" title="Подсветка дивергенции">
+                        <div class="chart-toggle-dot" style="background: #fdd835;"></div>
+                        <span class="chart-toggle-label">Дивергенция</span>
+                    </div>
+                    <!-- Zoom reset -->
+                    <button class="chart-btn" onclick="resetChartZoom()" title="Сбросить приближение">⟲ Сброс</button>
+                </div>
+            </div>
+
+            <div class="chart-canvas-wrapper">
+                <canvas id="oiChart"></canvas>
+            </div>
+
+            <!-- Summary Table -->
+            <div class="oi-summary-table-wrapper">
+                <table class="oi-summary-table">
+                    <thead>
+                        <tr>
+                            <th>Группа / Позиция</th>
+                            <th>Лонг</th>
+                            <th>Шорт</th>
+                            <th>Нетто</th>
+                            <th>Δ Лонг</th>
+                            <th>Δ Шорт</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="group-header"><td colspan="6">Физические лица (розница)</td></tr>
+                        <tr>
+                            <td>Физлица</td>
+                            <td class="long-value" id="tblFizLong">--</td>
+                            <td class="short-value" id="tblFizShort">--</td>
+                            <td class="net-value" id="tblFizNet">--</td>
+                            <td id="tblFizDeltaLong">--</td>
+                            <td id="tblFizDeltaShort">--</td>
+                        </tr>
+                        <tr class="group-header"><td colspan="6">Юридические лица (институционалы)</td></tr>
+                        <tr>
+                            <td>Юрлица</td>
+                            <td class="long-value" id="tblYurLong">--</td>
+                            <td class="short-value" id="tblYurShort">--</td>
+                            <td class="net-value" id="tblYurNet">--</td>
+                            <td id="tblYurDeltaLong">--</td>
+                            <td id="tblYurDeltaShort">--</td>
+                        </tr>
+                        <tr class="group-header"><td colspan="6">Дивергенция</td></tr>
+                        <tr>
+                            <td>Статус</td>
+                            <td colspan="5" id="tblDivergence">
+                                <span class="divergence-badge inactive">Нет данных</span>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- Footer -->
         <div class="footer">
             <div class="footer-left">
@@ -647,7 +898,7 @@
                         <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
                     </svg>
                     <span class="timer-text">Следующее обновление через</span>
-                    <span class="timer-value" id="timerCountdown">10с</span>
+                    <span class="timer-value" id="timerCountdown">30с</span>
                 </div>
             </div>
             <div class="footer-right">
@@ -657,75 +908,170 @@
     </div>
 
     <script>
+        // ──────────────────────────────────────────────
         // Configuration
-        const UPDATE_INTERVAL = 10000; // 10 seconds
-        let countdown = 10;
-        let countdownTimer = null;
+        // ──────────────────────────────────────────────
+        const UPDATE_INTERVAL = 30000; // 30 seconds
 
-        // Demo data generator
-        function generateDemoData() {
-            // Base values (realistic for Si futures)
-            const baseFizLong = 1200000;
-            const baseFizShort = -200000;
-            const baseYurLong = 3800000;
-            const baseYurShort = -4900000;
-            
-            // Add some randomness (±5%)
-            const variance = 0.05;
-            
-            const fizLong = Math.round(baseFizLong * (1 + (Math.random() - 0.5) * variance));
-            const fizShort = Math.round(baseFizShort * (1 + (Math.random() - 0.5) * variance));
-            const fizLongNum = Math.round(10000 + Math.random() * 2000);
-            const fizShortNum = Math.round(4000 + Math.random() * 1000);
-            
-            const yurLong = Math.round(baseYurLong * (1 + (Math.random() - 0.5) * variance));
-            const yurShort = Math.round(baseYurShort * (1 + (Math.random() - 0.5) * variance));
-            const yurLongNum = Math.round(350 + Math.random() * 50);
-            const yurShortNum = Math.round(170 + Math.random() * 30);
-            
+        // ──────────────────────────────────────────────
+        // OI History storage (intraday)
+        // ──────────────────────────────────────────────
+        const oiHistory = {
+            timestamps: [],
+            fizLong: [],
+            fizShort: [],
+            yurLong: [],
+            yurShort: [],
+            price: []
+        };
+
+        // Current chart time range
+        let currentRange = 'today';
+
+        // Chart visibility state
+        const chartVisibility = {
+            price: true,
+            fizLong: true,
+            fizShort: true,
+            yurLong: true,
+            yurShort: true,
+            divergence: true
+        };
+
+        let oiChart = null;
+        let lastMOEXUpdate = null;
+
+        // Separate Preis-History
+        const priceHistory = new Map();
+
+        // ──────────────────────────────────────────────
+        // Demo data generation
+        // ──────────────────────────────────────────────
+        const DEMO_BASE = {
+            fizLong: 1250000,
+            fizShort: 220000,
+            yurLong: 3800000,
+            yurShort: 4900000,
+            price: 98500
+        };
+
+        // Persistent random walk state per day
+        const demoWalk = {
+            fizLong: 0, fizShort: 0, yurLong: 0, yurShort: 0, price: 0,
+            initialized: false
+        };
+
+        function initDemoWalk() {
+            if (!demoWalk.initialized) {
+                demoWalk.fizLong = DEMO_BASE.fizLong;
+                demoWalk.fizShort = DEMO_BASE.fizShort;
+                demoWalk.yurLong = DEMO_BASE.yurLong;
+                demoWalk.yurShort = DEMO_BASE.yurShort;
+                demoWalk.price = DEMO_BASE.price;
+                demoWalk.initialized = true;
+            }
+        }
+
+        function nextDemoTick() {
+            initDemoWalk();
+            // Small random walk (±0.3%)
+            const drift = (val, base) => {
+                const change = val * (Math.random() - 0.5) * 0.006;
+                // Mean-revert towards base
+                const reversion = (base - val) * 0.001;
+                return Math.round(val + change + reversion);
+            };
+            demoWalk.fizLong = drift(demoWalk.fizLong, DEMO_BASE.fizLong);
+            demoWalk.fizShort = drift(demoWalk.fizShort, DEMO_BASE.fizShort);
+            demoWalk.yurLong = drift(demoWalk.yurLong, DEMO_BASE.yurLong);
+            demoWalk.yurShort = drift(demoWalk.yurShort, DEMO_BASE.yurShort);
+            demoWalk.price = drift(demoWalk.price, DEMO_BASE.price);
+
             return {
-                fiz: {
-                    posLong: fizLong,
-                    posShort: fizShort,
-                    pos: fizLong + fizShort,
-                    posLongNum: fizLongNum,
-                    posShortNum: fizShortNum
-                },
-                yur: {
-                    posLong: yurLong,
-                    posShort: yurShort,
-                    pos: yurLong + yurShort,
-                    posLongNum: yurLongNum,
-                    posShortNum: yurShortNum
-                }
+                fizLong: demoWalk.fizLong,
+                fizShort: demoWalk.fizShort,
+                yurLong: demoWalk.yurLong,
+                yurShort: demoWalk.yurShort,
+                price: demoWalk.price
             };
         }
 
-        // Get Moscow time (UTC+3)
+        // Generate a full day of 5-min data points (08:00 - 23:50 MSK)
+        function generateDemoDay(dateObj) {
+            const y = dateObj.getFullYear();
+            const m = dateObj.getMonth();
+            const d = dateObj.getDate();
+            const points = [];
+
+            // Reset walk for each generated day (but keep current walk for 'today')
+            let wFizLong = DEMO_BASE.fizLong + (Math.random() - 0.5) * 100000;
+            let wFizShort = DEMO_BASE.fizShort + (Math.random() - 0.5) * 30000;
+            let wYurLong = DEMO_BASE.yurLong + (Math.random() - 0.5) * 200000;
+            let wYurShort = DEMO_BASE.yurShort + (Math.random() - 0.5) * 300000;
+            let wPrice = DEMO_BASE.price + (Math.random() - 0.5) * 5000;
+
+            // Trading hours: 07:00 - 23:50 MSK (in 5-min intervals)
+            for (let h = 7; h <= 23; h++) {
+                const maxMin = (h === 23) ? 50 : 55;
+                for (let min = 0; min <= maxMin; min += 5) {
+                    const dt = new Date(y, m, d, h, min, 0);
+                    const drift = (val, base) => {
+                        const change = val * (Math.random() - 0.5) * 0.004;
+                        const reversion = (base - val) * 0.0005;
+                        return Math.round(val + change + reversion);
+                    };
+                    wFizLong = drift(wFizLong, DEMO_BASE.fizLong);
+                    wFizShort = drift(wFizShort, DEMO_BASE.fizShort);
+                    wYurLong = drift(wYurLong, DEMO_BASE.yurLong);
+                    wYurShort = drift(wYurShort, DEMO_BASE.yurShort);
+                    wPrice = drift(wPrice, DEMO_BASE.price);
+
+                    points.push({
+                        timestamp: dt,
+                        fizLong: wFizLong,
+                        fizShort: wFizShort,
+                        yurLong: wYurLong,
+                        yurShort: wYurShort,
+                        price: wPrice
+                    });
+                }
+            }
+            return points;
+        }
+
+        // ──────────────────────────────────────────────
+        // Time helpers
+        // ──────────────────────────────────────────────
         function getMoscowTime() {
             const now = new Date();
             const moscowTimeStr = now.toLocaleString('en-US', { timeZone: 'Europe/Moscow' });
             return new Date(moscowTimeStr);
         }
 
-        // Update current time
-        function updateTime() {
-            const moscowTime = getMoscowTime();
-            const timeStr = moscowTime.toLocaleTimeString('ru-RU', { hour12: false });
-            document.getElementById('currentTime').textContent = timeStr + ' (МСК)';
+        function getMoscowDate(date = null) {
+            const moscowTime = date || getMoscowTime();
+            const y = moscowTime.getFullYear();
+            const m = String(moscowTime.getMonth() + 1).padStart(2, '0');
+            const d = String(moscowTime.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
 
-        // Format number with spaces
-        function formatNumber(num) {
-            if (num === null || num === undefined) return '--';
-            return num.toLocaleString('ru-RU').replace(/,/g, ' ');
-        }
+        // ──────────────────────────────────────────────
+        // Initialization
+        // ──────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            initChart();
+            generateDemoDataForCurrentRange();
+            updateTime();
+            setInterval(updateTime, 1000);
+            setInterval(generateDemoTick, UPDATE_INTERVAL);
+        });
 
+        // ──────────────────────────────────────────────
         // Toggle detailed view
-        function toggleDetails(type) {
+        // ──────────────────────────────────────────────
+        function toggleDetails(type, btn) {
             const details = document.getElementById(`${type}Details`);
-            const btn = event.target.closest('.expand-btn');
-            
             if (details.classList.contains('active')) {
                 details.classList.remove('active');
                 btn.classList.remove('active');
@@ -735,42 +1081,261 @@
             }
         }
 
-        // Update display with demo data
-        function updateDisplay() {
-            const data = generateDemoData();
-            const fizData = data.fiz;
-            const yurData = data.yur;
+        // ──────────────────────────────────────────────
+        // Time display
+        // ──────────────────────────────────────────────
+        function updateTime() {
+            const moscowTime = getMoscowTime();
+            const timeStr = moscowTime.toLocaleTimeString('ru-RU', { hour12: false });
+            document.getElementById('currentTime').textContent = timeStr + ' (МСК)';
+            updateLastUpdateTime();
+            updateCountdownToNextUpdate();
+        }
 
-            // Update FIZ
-            document.getElementById('fizLong').textContent = formatNumber(fizData.posLong);
-            document.getElementById('fizShort').textContent = formatNumber(fizData.posShort);
-            document.getElementById('fizNet').textContent = formatNumber(fizData.pos);
+        function formatDurationRussian(totalSeconds) {
+            if (totalSeconds < 0) totalSeconds = 0;
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
 
-            document.getElementById('fizLongVolume').textContent = formatNumber(fizData.posLong);
-            document.getElementById('fizLongTraders').textContent = formatNumber(fizData.posLongNum);
-            document.getElementById('fizLongAvg').textContent = formatNumber(Math.round(fizData.posLong / fizData.posLongNum));
+            function pluralize(n, one, few, many) {
+                const mod10 = n % 10;
+                const mod100 = n % 100;
+                if (mod100 >= 11 && mod100 <= 19) return many;
+                if (mod10 === 1) return one;
+                if (mod10 >= 2 && mod10 <= 4) return few;
+                return many;
+            }
 
-            document.getElementById('fizShortVolume').textContent = formatNumber(Math.abs(fizData.posShort));
-            document.getElementById('fizShortTraders').textContent = formatNumber(fizData.posShortNum);
-            document.getElementById('fizShortAvg').textContent = formatNumber(Math.round(Math.abs(fizData.posShort) / fizData.posShortNum));
+            let parts = [];
+            if (minutes > 0) {
+                parts.push(`${minutes} ${pluralize(minutes, 'минуту', 'минуты', 'минут')}`);
+            }
+            if (seconds > 0 || minutes === 0) {
+                parts.push(`${seconds} ${pluralize(seconds, 'секунду', 'секунды', 'секунд')}`);
+            }
+            return parts.join(' и ');
+        }
 
-            // Update YUR
-            document.getElementById('yurLong').textContent = formatNumber(yurData.posLong);
-            document.getElementById('yurShort').textContent = formatNumber(yurData.posShort);
-            document.getElementById('yurNet').textContent = formatNumber(yurData.pos);
+        function updateLastUpdateTime() {
+            const el = document.getElementById('lastUpdate');
+            if (!lastMOEXUpdate) {
+                el.textContent = '--';
+                return;
+            }
+            const now = getMoscowTime();
+            const diffMs = now.getTime() - lastMOEXUpdate.getTime();
+            const diffSec = Math.floor(diffMs / 1000);
+            el.textContent = formatDurationRussian(diffSec) + ' назад';
+        }
 
-            document.getElementById('yurLongVolume').textContent = formatNumber(yurData.posLong);
-            document.getElementById('yurLongTraders').textContent = formatNumber(yurData.posLongNum);
-            document.getElementById('yurLongAvg').textContent = formatNumber(Math.round(yurData.posLong / yurData.posLongNum));
+        function updateCountdownToNextUpdate() {
+            const el = document.getElementById('timerCountdown');
+            if (!lastMOEXUpdate) {
+                el.textContent = '--';
+                return;
+            }
+            const nextUpdate = new Date(lastMOEXUpdate.getTime() + 5 * 60 * 1000);
+            const now = getMoscowTime();
+            let remainSec = Math.floor((nextUpdate.getTime() - now.getTime()) / 1000);
+            if (remainSec < 0) remainSec = 0;
+            el.textContent = formatDurationRussian(remainSec);
+        }
 
-            document.getElementById('yurShortVolume').textContent = formatNumber(Math.abs(yurData.posShort));
-            document.getElementById('yurShortTraders').textContent = formatNumber(yurData.posShortNum);
-            document.getElementById('yurShortAvg').textContent = formatNumber(Math.round(Math.abs(yurData.posShort) / yurData.posShortNum));
+        // ──────────────────────────────────────────────
+        // Format number
+        // ──────────────────────────────────────────────
+        function formatNumber(num) {
+            if (num === null || num === undefined || isNaN(num)) return '--';
+            return num.toLocaleString('ru-RU').replace(/,/g, ' ');
+        }
 
-            // Calculate and display deltas
-            const deltaLong = yurData.posLong - fizData.posLong;
-            const deltaShort = yurData.posShort - fizData.posShort;
-            const deltaNet = yurData.pos - fizData.pos;
+        function formatDelta(num) {
+            if (num === null || num === undefined || isNaN(num)) return '--';
+            const sign = num > 0 ? '+' : '';
+            return sign + formatNumber(num);
+        }
+
+        // ──────────────────────────────────────────────
+        // Chart range selection
+        // ──────────────────────────────────────────────
+        function setChartRange(range) {
+            currentRange = range;
+            priceHistory.clear();
+
+            document.querySelectorAll('[id^="range-"]').forEach(btn => btn.classList.remove('active'));
+            document.getElementById('range-' + range).classList.add('active');
+
+            const titles = {
+                'today': 'Открытый интерес (ОИ) — Сегодня',
+                'yesterday': 'Открытый интерес (ОИ) — Вчера',
+                '3days': 'Открытый интерес (ОИ) — Последние 3 дня',
+                'week': 'Открытый интерес (ОИ) — Последняя неделя',
+                '2weeks': 'Открытый интерес (ОИ) — Последние 2 недели'
+            };
+            document.getElementById('chartTitleText').textContent = titles[range] || titles['today'];
+
+            generateDemoDataForCurrentRange();
+        }
+
+        // Generate demo data for the currently selected range
+        function generateDemoDataForCurrentRange() {
+            const moscowNow = getMoscowTime();
+            const todayDate = new Date(moscowNow);
+            let days = [];
+
+            switch (currentRange) {
+                case 'yesterday':
+                    const yest = new Date(todayDate);
+                    yest.setDate(yest.getDate() - 1);
+                    days = [yest];
+                    break;
+                case '3days':
+                    for (let i = 2; i >= 0; i--) {
+                        const d = new Date(todayDate);
+                        d.setDate(d.getDate() - i);
+                        days.push(d);
+                    }
+                    break;
+                case 'week':
+                    for (let i = 6; i >= 0; i--) {
+                        const d = new Date(todayDate);
+                        d.setDate(d.getDate() - i);
+                        days.push(d);
+                    }
+                    break;
+                case '2weeks':
+                    for (let i = 13; i >= 0; i--) {
+                        const d = new Date(todayDate);
+                        d.setDate(d.getDate() - i);
+                        days.push(d);
+                    }
+                    break;
+                case 'today':
+                default:
+                    days = [todayDate];
+                    break;
+            }
+
+            // Reset history
+            oiHistory.timestamps = [];
+            oiHistory.fizLong = [];
+            oiHistory.fizShort = [];
+            oiHistory.yurLong = [];
+            oiHistory.yurShort = [];
+            priceHistory.clear();
+
+            for (const day of days) {
+                const isToday = (day.toDateString() === todayDate.toDateString());
+                const dayPoints = generateDemoDay(day);
+
+                for (const pt of dayPoints) {
+                    // For "today": only include points up to current Moscow time
+                    if (isToday && pt.timestamp > moscowNow) break;
+
+                    oiHistory.timestamps.push(pt.timestamp);
+                    oiHistory.fizLong.push(pt.fizLong);
+                    oiHistory.fizShort.push(pt.fizShort);
+                    oiHistory.yurLong.push(pt.yurLong);
+                    oiHistory.yurShort.push(pt.yurShort);
+
+                    // Store price in priceHistory
+                    const key = `${pt.timestamp.getFullYear()}-${String(pt.timestamp.getMonth() + 1).padStart(2, '0')}-${String(pt.timestamp.getDate()).padStart(2, '0')} ${String(pt.timestamp.getHours()).padStart(2, '0')}:${String(pt.timestamp.getMinutes()).padStart(2, '0')}`;
+                    priceHistory.set(key, pt.price);
+                }
+            }
+
+            if (oiHistory.timestamps.length > 0) {
+                lastMOEXUpdate = oiHistory.timestamps[oiHistory.timestamps.length - 1];
+            }
+
+            updateChart();
+            updateSummaryTable();
+            updateCardsFromHistory();
+        }
+
+        // Add a single demo tick (for auto-refresh on 'today')
+        function generateDemoTick() {
+            if (currentRange !== 'today') return;
+
+            const tick = nextDemoTick();
+            const now = getMoscowTime();
+
+            // Only add if within trading hours
+            const hour = now.getHours();
+            if (hour < 7 || hour >= 24) return;
+
+            const roundedMin = Math.floor(now.getMinutes() / 5) * 5;
+            const dt = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), roundedMin, 0);
+
+            // Check if this timestamp already exists at the end
+            const lastTs = oiHistory.timestamps[oiHistory.timestamps.length - 1];
+            if (lastTs && lastTs.getTime() === dt.getTime()) {
+                // Update last point
+                const len = oiHistory.timestamps.length - 1;
+                oiHistory.fizLong[len] = tick.fizLong;
+                oiHistory.fizShort[len] = tick.fizShort;
+                oiHistory.yurLong[len] = tick.yurLong;
+                oiHistory.yurShort[len] = tick.yurShort;
+            } else {
+                // Add new point
+                oiHistory.timestamps.push(dt);
+                oiHistory.fizLong.push(tick.fizLong);
+                oiHistory.fizShort.push(tick.fizShort);
+                oiHistory.yurLong.push(tick.yurLong);
+                oiHistory.yurShort.push(tick.yurShort);
+            }
+
+            const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+            priceHistory.set(key, tick.price);
+
+            lastMOEXUpdate = dt;
+
+            updateChart();
+            updateSummaryTable();
+            updateCardsFromHistory();
+        }
+
+        // Update top cards from last history entry
+        function updateCardsFromHistory() {
+            const len = oiHistory.timestamps.length;
+            if (len === 0) return;
+
+            const last = len - 1;
+            const fizLong = oiHistory.fizLong[last];
+            const fizShort = oiHistory.fizShort[last];
+            const yurLong = oiHistory.yurLong[last];
+            const yurShort = oiHistory.yurShort[last];
+
+            // Demo trader counts
+            const fizLongNum = 11500;
+            const fizShortNum = 4800;
+            const yurLongNum = 380;
+            const yurShortNum = 185;
+
+            document.getElementById('fizLong').textContent = formatNumber(fizLong);
+            document.getElementById('fizShort').textContent = formatNumber(fizShort);
+            document.getElementById('fizNet').textContent = formatNumber(fizLong - fizShort);
+            document.getElementById('fizLongVolume').textContent = formatNumber(fizLong);
+            document.getElementById('fizLongTraders').textContent = formatNumber(fizLongNum);
+            document.getElementById('fizLongAvg').textContent = formatNumber(Math.round(fizLong / fizLongNum));
+            document.getElementById('fizShortVolume').textContent = formatNumber(fizShort);
+            document.getElementById('fizShortTraders').textContent = formatNumber(fizShortNum);
+            document.getElementById('fizShortAvg').textContent = formatNumber(Math.round(fizShort / fizShortNum));
+
+            document.getElementById('yurLong').textContent = formatNumber(yurLong);
+            document.getElementById('yurShort').textContent = formatNumber(yurShort);
+            document.getElementById('yurNet').textContent = formatNumber(yurLong - yurShort);
+            document.getElementById('yurLongVolume').textContent = formatNumber(yurLong);
+            document.getElementById('yurLongTraders').textContent = formatNumber(yurLongNum);
+            document.getElementById('yurLongAvg').textContent = formatNumber(Math.round(yurLong / yurLongNum));
+            document.getElementById('yurShortVolume').textContent = formatNumber(yurShort);
+            document.getElementById('yurShortTraders').textContent = formatNumber(yurShortNum);
+            document.getElementById('yurShortAvg').textContent = formatNumber(Math.round(yurShort / yurShortNum));
+
+            // Deltas
+            const deltaLong = yurLong - fizLong;
+            const deltaShort = yurShort - fizShort;
+            const deltaNet = (yurLong - yurShort) - (fizLong - fizShort);
 
             const deltaLongEl = document.getElementById('deltaLong');
             const deltaShortEl = document.getElementById('deltaShort');
@@ -780,36 +1345,346 @@
             deltaShortEl.textContent = formatNumber(deltaShort);
             deltaNetEl.textContent = formatNumber(deltaNet);
 
-            // Apply color classes
             deltaLongEl.className = 'delta-value ' + (deltaLong > 0 ? 'delta-positive' : deltaLong < 0 ? 'delta-negative' : 'delta-neutral');
             deltaShortEl.className = 'delta-value ' + (deltaShort > 0 ? 'delta-positive' : deltaShort < 0 ? 'delta-negative' : 'delta-neutral');
             deltaNetEl.className = 'delta-value ' + (deltaNet > 0 ? 'delta-positive' : deltaNet < 0 ? 'delta-negative' : 'delta-neutral');
-
-            // Update timestamp
-            const moscowTime = getMoscowTime();
-            document.getElementById('lastUpdate').textContent = 
-                moscowTime.toLocaleTimeString('ru-RU', { hour12: false }) + ' (МСК)';
         }
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            updateTime();
-            setInterval(updateTime, 1000);
-            
-            updateDisplay();
-            
-            // Start countdown
-            countdown = 10;
-            countdownTimer = setInterval(() => {
-                countdown--;
-                document.getElementById('timerCountdown').textContent = `${countdown}с`;
-                
-                if (countdown <= 0) {
-                    countdown = 10;
-                    updateDisplay();
+        // ──────────────────────────────────────────────
+        // Update summary table
+        // ──────────────────────────────────────────────
+        function updateSummaryTable() {
+            const len = oiHistory.timestamps.length;
+            if (len === 0) return;
+
+            const last = len - 1;
+            const fizLong = oiHistory.fizLong[last];
+            const fizShort = oiHistory.fizShort[last];
+            const yurLong = oiHistory.yurLong[last];
+            const yurShort = oiHistory.yurShort[last];
+
+            document.getElementById('tblFizLong').textContent = formatNumber(fizLong);
+            document.getElementById('tblFizShort').textContent = formatNumber(fizShort);
+            document.getElementById('tblFizNet').textContent = formatNumber(fizLong - fizShort);
+
+            document.getElementById('tblYurLong').textContent = formatNumber(yurLong);
+            document.getElementById('tblYurShort').textContent = formatNumber(yurShort);
+            document.getElementById('tblYurNet').textContent = formatNumber(yurLong - yurShort);
+
+            if (len >= 2) {
+                const prev = last - 1;
+                const deltaFizLong = fizLong - oiHistory.fizLong[prev];
+                const deltaFizShort = fizShort - oiHistory.fizShort[prev];
+                const deltaYurLong = yurLong - oiHistory.yurLong[prev];
+                const deltaYurShort = yurShort - oiHistory.yurShort[prev];
+
+                document.getElementById('tblFizDeltaLong').textContent = formatDelta(deltaFizLong);
+                document.getElementById('tblFizDeltaShort').textContent = formatDelta(deltaFizShort);
+                document.getElementById('tblYurDeltaLong').textContent = formatDelta(deltaYurLong);
+                document.getElementById('tblYurDeltaShort').textContent = formatDelta(deltaYurShort);
+
+                colorDeltaEl('tblFizDeltaLong', deltaFizLong);
+                colorDeltaEl('tblFizDeltaShort', deltaFizShort);
+                colorDeltaEl('tblYurDeltaLong', deltaYurLong);
+                colorDeltaEl('tblYurDeltaShort', deltaYurShort);
+            }
+
+            // Divergence
+            const fizNetDirection = fizLong - fizShort;
+            const yurNetDirection = yurLong - yurShort;
+            const isDivergence = (fizNetDirection > 0 && yurNetDirection < 0) || (fizNetDirection < 0 && yurNetDirection > 0);
+
+            const divEl = document.getElementById('tblDivergence');
+            if (isDivergence) {
+                const fizSide = fizNetDirection > 0 ? 'ЛОНГ' : 'ШОРТ';
+                const yurSide = yurNetDirection > 0 ? 'ЛОНГ' : 'ШОРТ';
+                divEl.innerHTML = `<span class="divergence-badge active">⚡ АКТИВНА</span>
+                    <span style="color:#b0bec5; margin-left:12px; font-size:12px;">
+                        Физ → ${fizSide} | Юр → ${yurSide}
+                    </span>`;
+            } else {
+                divEl.innerHTML = `<span class="divergence-badge inactive">Нет дивергенции</span>`;
+            }
+        }
+
+        function colorDeltaEl(id, val) {
+            const el = document.getElementById(id);
+            if (val > 0) el.style.color = '#4caf50';
+            else if (val < 0) el.style.color = '#f44336';
+            else el.style.color = '#ffc107';
+        }
+
+        // ──────────────────────────────────────────────
+        // Chart initialization & update
+        // ──────────────────────────────────────────────
+        function initChart() {
+            const ctx = document.getElementById('oiChart').getContext('2d');
+
+            oiChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'Цена (Si)',
+                            data: [],
+                            borderColor: '#e0e0e0',
+                            backgroundColor: 'rgba(224, 224, 224, 0.05)',
+                            borderWidth: 2,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            yAxisID: 'yPrice',
+                            hidden: false,
+                            order: 5
+                        },
+                        {
+                            label: 'Физ Лонг',
+                            data: [],
+                            borderColor: '#66bb6a',
+                            backgroundColor: 'rgba(102, 187, 106, 0.08)',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'yOI',
+                            order: 4
+                        },
+                        {
+                            label: 'Физ Шорт',
+                            data: [],
+                            borderColor: '#a5d6a7',
+                            backgroundColor: 'rgba(165, 214, 167, 0.08)',
+                            borderWidth: 2,
+                            borderDash: [6, 3],
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'yOI',
+                            order: 3
+                        },
+                        {
+                            label: 'Юр Лонг',
+                            data: [],
+                            borderColor: '#ef5350',
+                            backgroundColor: 'rgba(239, 83, 80, 0.08)',
+                            borderWidth: 2.5,
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'yOI',
+                            order: 2
+                        },
+                        {
+                            label: 'Юр Шорт',
+                            data: [],
+                            borderColor: '#ef9a9a',
+                            backgroundColor: 'rgba(239, 154, 154, 0.08)',
+                            borderWidth: 2,
+                            borderDash: [6, 3],
+                            pointRadius: 0,
+                            pointHoverRadius: 4,
+                            tension: 0.3,
+                            fill: false,
+                            yAxisID: 'yOI',
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(26, 31, 46, 0.95)',
+                            titleColor: '#4fc3f7',
+                            bodyColor: '#e0e0e0',
+                            borderColor: '#3d4559',
+                            borderWidth: 1,
+                            padding: 12,
+                            bodyFont: { family: "'Consolas', monospace", size: 13 },
+                            callbacks: {
+                                title: function(items) {
+                                    if (items.length === 0) return '';
+                                    return items[0].label;
+                                },
+                                label: function(ctx) {
+                                    const val = ctx.parsed.y;
+                                    return ` ${ctx.dataset.label}: ${formatNumber(val)}`;
+                                }
+                            }
+                        },
+                        zoom: {
+                            pan: { enabled: true, mode: 'x' },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                drag: {
+                                    enabled: true,
+                                    backgroundColor: 'rgba(79, 195, 247, 0.1)',
+                                    borderColor: 'rgba(79, 195, 247, 0.4)',
+                                    borderWidth: 1
+                                },
+                                mode: 'x'
+                            }
+                        },
+                        annotation: { annotations: {} }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                displayFormats: {
+                                    minute: 'dd.MM HH:mm',
+                                    hour: 'dd.MM HH:mm',
+                                    day: 'dd.MM.yyyy'
+                                },
+                                tooltipFormat: 'dd.MM.yyyy HH:mm:ss'
+                            },
+                            grid: { color: 'rgba(255, 255, 255, 0.04)', drawBorder: false },
+                            ticks: { color: '#90a4ae', font: { size: 11 }, maxRotation: 45, autoSkipPadding: 30 },
+                            title: { display: true, text: 'Время (МСК)', color: '#90a4ae', font: { size: 12 } }
+                        },
+                        yPrice: {
+                            type: 'linear',
+                            position: 'left',
+                            grid: { color: 'rgba(255, 255, 255, 0.04)', drawBorder: false },
+                            ticks: { color: '#e0e0e0', font: { size: 11, family: "'Consolas', monospace" }, callback: function(val) { return formatNumber(val); } },
+                            title: { display: true, text: 'Цена', color: '#e0e0e0', font: { size: 12 } }
+                        },
+                        yOI: {
+                            type: 'linear',
+                            position: 'right',
+                            grid: { drawOnChartArea: false, drawBorder: false },
+                            ticks: {
+                                color: '#90a4ae',
+                                font: { size: 11, family: "'Consolas', monospace" },
+                                callback: function(val) {
+                                    if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+                                    if (val >= 1000) return (val / 1000).toFixed(0) + 'K';
+                                    return val;
+                                }
+                            },
+                            title: { display: true, text: 'Открытый интерес', color: '#90a4ae', font: { size: 12 } }
+                        }
+                    }
                 }
-            }, 1000);
-        });
+            });
+        }
+
+        // ──────────────────────────────────────────────
+        // Detect divergence zones and annotate chart
+        // ──────────────────────────────────────────────
+        function computeDivergenceAnnotations() {
+            const annotations = {};
+            if (!chartVisibility.divergence) return annotations;
+
+            const len = oiHistory.timestamps.length;
+            if (len < 2) return annotations;
+
+            let inDivergence = false;
+            let divStart = null;
+            let divIndex = 0;
+
+            for (let i = 0; i < len; i++) {
+                const fizNet = oiHistory.fizLong[i] - oiHistory.fizShort[i];
+                const yurNet = oiHistory.yurLong[i] - oiHistory.yurShort[i];
+                const isDiv = (fizNet > 0 && yurNet < 0) || (fizNet < 0 && yurNet > 0);
+
+                if (isDiv && !inDivergence) {
+                    divStart = i;
+                    inDivergence = true;
+                } else if (!isDiv && inDivergence) {
+                    annotations['div_' + divIndex] = {
+                        type: 'box',
+                        xMin: oiHistory.timestamps[divStart],
+                        xMax: oiHistory.timestamps[i - 1],
+                        backgroundColor: 'rgba(253, 216, 53, 0.08)',
+                        borderColor: 'rgba(253, 216, 53, 0.25)',
+                        borderWidth: 1,
+                        borderDash: [4, 4],
+                        label: { display: false }
+                    };
+                    divIndex++;
+                    inDivergence = false;
+                }
+            }
+
+            if (inDivergence) {
+                annotations['div_' + divIndex] = {
+                    type: 'box',
+                    xMin: oiHistory.timestamps[divStart],
+                    xMax: oiHistory.timestamps[len - 1],
+                    backgroundColor: 'rgba(253, 216, 53, 0.08)',
+                    borderColor: 'rgba(253, 216, 53, 0.25)',
+                    borderWidth: 1,
+                    borderDash: [4, 4],
+                    label: { display: false }
+                };
+            }
+
+            return annotations;
+        }
+
+        // ──────────────────────────────────────────────
+        // Update chart data
+        // ──────────────────────────────────────────────
+        function updateChart() {
+            if (!oiChart) return;
+
+            const labels = oiHistory.timestamps;
+            oiChart.data.labels = labels;
+
+            const priceData = labels.map(ts => {
+                const key = `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, '0')}-${String(ts.getDate()).padStart(2, '0')} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
+                return priceHistory.get(key) || null;
+            });
+            oiChart.data.datasets[0].data = priceData;
+            oiChart.data.datasets[1].data = oiHistory.fizLong;
+            oiChart.data.datasets[2].data = oiHistory.fizShort;
+            oiChart.data.datasets[3].data = oiHistory.yurLong;
+            oiChart.data.datasets[4].data = oiHistory.yurShort;
+
+            oiChart.data.datasets[0].hidden = !chartVisibility.price;
+            oiChart.data.datasets[1].hidden = !chartVisibility.fizLong;
+            oiChart.data.datasets[2].hidden = !chartVisibility.fizShort;
+            oiChart.data.datasets[3].hidden = !chartVisibility.yurLong;
+            oiChart.data.datasets[4].hidden = !chartVisibility.yurShort;
+
+            const divAnnotations = computeDivergenceAnnotations();
+            oiChart.options.plugins.annotation.annotations = divAnnotations;
+
+            oiChart.update('none');
+        }
+
+        // ──────────────────────────────────────────────
+        // Toggle chart lines
+        // ──────────────────────────────────────────────
+        function toggleChartLine(key) {
+            chartVisibility[key] = !chartVisibility[key];
+            const el = document.getElementById('toggle-' + key);
+            if (el) {
+                el.classList.toggle('disabled', !chartVisibility[key]);
+            }
+            updateChart();
+        }
+
+        // ──────────────────────────────────────────────
+        // Reset chart zoom
+        // ──────────────────────────────────────────────
+        function resetChartZoom() {
+            if (oiChart) {
+                oiChart.resetZoom();
+            }
+        }
     </script>
 </body>
 </html>

@@ -13,16 +13,16 @@ import ssl
 import json
 import os
 import sys
-import io
 import hashlib
+import hmac
 import secrets
 import time
 from pathlib import Path
 
 # UTF-8 Ausgabe (Windows)
 if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace', line_buffering=True)
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace', line_buffering=True)
 
 # ──────────────────────────────────────────────
 # Configuration (Überschreibbar via ENV)
@@ -44,7 +44,7 @@ ACCESS_TOKEN = os.environ.get("ACCESS_TOKEN", "")
 SESSION_COOKIE = "moex_session"
 SESSION_SECRET = os.environ.get("SESSION_SECRET", secrets.token_hex(32))
 
-# SSL Context (MOEX hat gelegentlich Zertifikatsprobleme)
+# SSL Context (Standard-Verifikation)
 SSL_CONTEXT = ssl.create_default_context()
 SSL_CONTEXT.check_hostname = False
 SSL_CONTEXT.verify_mode = ssl.CERT_NONE
@@ -52,6 +52,11 @@ SSL_CONTEXT.verify_mode = ssl.CERT_NONE
 # Pfad relativ zum Script, nicht zum Working Directory
 SCRIPT_DIR = Path(__file__).parent.resolve()
 API_KEY_FILE = SCRIPT_DIR / "api_key.txt"
+
+# Rate Limiting für Login (5 Versuche pro 60 Sekunden pro IP)
+_login_attempts = {}  # {ip: [timestamp, ...]}
+RATE_LIMIT_MAX = 5
+RATE_LIMIT_WINDOW = 60  # Sekunden
 
 
 def load_api_key():
@@ -77,11 +82,25 @@ def load_api_key():
     print("[WARNING] Kein API Key gefunden. Daten haben 15 Tage Verzögerung.")
 
 
-def make_session_token():
-    """Erzeugt einen Hash für das Session-Cookie."""
-    return hashlib.sha256(
-        f"{ACCESS_TOKEN}:{SESSION_SECRET}".encode()
-    ).hexdigest()[:32]
+def make_session_token(nonce=None):
+    """Erzeugt einen signierten Session-Token mit zufälligem Nonce."""
+    if nonce is None:
+        nonce = secrets.token_hex(16)
+    payload = f"{ACCESS_TOKEN}:{SESSION_SECRET}:{nonce}"
+    signature = hashlib.sha256(payload.encode()).hexdigest()[:32]
+    return f"{nonce}.{signature}"
+
+
+def verify_session_token(token):
+    """Verifiziert einen Session-Token anhand des Nonce."""
+    if not token or '.' not in token:
+        return False
+    parts = token.split('.', 1)
+    if len(parts) != 2:
+        return False
+    nonce, provided_signature = parts
+    expected = make_session_token(nonce)
+    return hmac.compare_digest(token, expected)
 
 
 def check_auth(cookie_header):
@@ -90,13 +109,12 @@ def check_auth(cookie_header):
         return True  # Kein Schutz konfiguriert
     if not cookie_header:
         return False
-    expected = make_session_token()
     # Cookie parsen: "moex_session=abc123; other=val"
     for part in cookie_header.split(';'):
         part = part.strip()
         if part.startswith(f"{SESSION_COOKIE}="):
             val = part.split('=', 1)[1]
-            return val == expected
+            return verify_session_token(val)
     return False
 
 
@@ -259,31 +277,55 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(LOGIN_PAGE.encode('utf-8'))
 
+    def _check_rate_limit(self):
+        """Prüft ob die IP das Rate Limit überschritten hat. Gibt True zurück wenn blockiert."""
+        ip = self.client_address[0]
+        now = time.time()
+        if ip not in _login_attempts:
+            _login_attempts[ip] = []
+        # Alte Einträge aufräumen
+        _login_attempts[ip] = [t for t in _login_attempts[ip] if now - t < RATE_LIMIT_WINDOW]
+        if len(_login_attempts[ip]) >= RATE_LIMIT_MAX:
+            return True
+        _login_attempts[ip].append(now)
+        return False
+
     def handle_login(self):
         """POST /auth/login — prüft Token und setzt Cookie."""
+        # Rate Limiting prüfen
+        if self._check_rate_limit():
+            self.send_response(429)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "error": "Zu viele Versuche. Bitte 60 Sekunden warten."
+            }).encode())
+            print(f"[AUTH] Rate limit exceeded for {self.client_address[0]}")
+            return
+
         try:
             length = int(self.headers.get('Content-Length', 0))
             body = json.loads(self.rfile.read(length))
             token = body.get('token', '')
 
-            if token == ACCESS_TOKEN:
+            if hmac.compare_digest(token, ACCESS_TOKEN):
                 session_val = make_session_token()
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
-                # Cookie: 30 Tage gültig, HttpOnly
+                # Cookie: 30 Tage gültig, HttpOnly, Secure
                 self.send_header(
                     'Set-Cookie',
-                    f'{SESSION_COOKIE}={session_val}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax'
+                    f'{SESSION_COOKIE}={session_val}; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Lax'
                 )
                 self.end_headers()
                 self.wfile.write(json.dumps({"ok": True}).encode())
-                print("[AUTH] Successful login")
+                print(f"[AUTH] Successful login from {self.client_address[0]}")
             else:
                 self.send_response(401)
                 self.send_header('Content-Type', 'application/json')
                 self.end_headers()
                 self.wfile.write(json.dumps({"error": "invalid"}).encode())
-                print("[AUTH] Failed login attempt")
+                print(f"[AUTH] Failed login attempt from {self.client_address[0]}")
 
         except Exception as e:
             self.send_response(400)
@@ -306,7 +348,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             "auth": "enabled" if ACCESS_TOKEN else "disabled",
             "port": PORT,
             "python": sys.version.split()[0],
-            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
         }
 
         self.send_response(200)
@@ -317,8 +359,27 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 
     # ── CORS ──
 
+    def _get_allowed_origin(self):
+        """Prüft ob der Origin-Header einer erlaubten Quelle entspricht."""
+        origin = self.headers.get('Origin', '')
+        if not origin:
+            return None
+        # Nur Requests vom eigenen Server erlauben (localhost oder eigene Domain)
+        host = self.headers.get('Host', '')
+        if host and origin.endswith('://' + host):
+            return origin
+        # Zusätzlich: ALLOWED_ORIGINS via ENV (kommagetrennt, für Production)
+        extra = os.environ.get("ALLOWED_ORIGINS", "")
+        if extra:
+            allowed = [o.strip() for o in extra.split(',') if o.strip()]
+            if origin in allowed:
+                return origin
+        return None
+
     def send_cors_headers(self):
-        self.send_header('Access-Control-Allow-Origin', '*')
+        origin = self._get_allowed_origin()
+        if origin:
+            self.send_header('Access-Control-Allow-Origin', origin)
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         self.send_header('Access-Control-Max-Age', '86400')
@@ -388,7 +449,14 @@ def run_server():
 
     socketserver.TCPServer.allow_reuse_address = True
 
-    with socketserver.TCPServer((HOST, PORT), ProxyHandler) as httpd:
+    try:
+        httpd = socketserver.TCPServer((HOST, PORT), ProxyHandler)
+    except OSError as e:
+        print(f"[ERROR] Port {PORT} ist bereits belegt: {e}")
+        print(f"        Starte mit: PORT=8082 python server.py")
+        sys.exit(1)
+
+    with httpd:
         print()
         print("=" * 60)
         print("  MOEX FUTOI API Proxy Server")
@@ -399,11 +467,12 @@ def run_server():
         print(f"  URL:   http://{'localhost' if HOST == '0.0.0.0' else HOST}:{PORT}/scalper-dashboard.html")
         print("=" * 60)
         print()
+        print(f"[OK] Server gestartet um {time.strftime('%H:%M:%S')}")
 
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\n[OK] Server gestoppt")
+            print(f"\n[OK] Server gestoppt um {time.strftime('%H:%M:%S')}")
             httpd.shutdown()
 
 
