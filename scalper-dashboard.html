@@ -1094,6 +1094,10 @@
 
         let oiChart = null;
 
+        // Separate Preis-History (wächst inkrementell pro Poll)
+        // Key: "YYYY-MM-DD HH:MM" (Moskauer Zeit, ohne Sekunden) → Value: Preis
+        const priceHistory = new Map();
+
         // ──────────────────────────────────────────────
         // Time helpers
         // ──────────────────────────────────────────────
@@ -1105,7 +1109,10 @@
 
         function getMoscowDate(date = null) {
             const moscowTime = date || getMoscowTime();
-            return moscowTime.toISOString().split('T')[0];
+            const y = moscowTime.getFullYear();
+            const m = String(moscowTime.getMonth() + 1).padStart(2, '0');
+            const d = String(moscowTime.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
         }
 
         // ──────────────────────────────────────────────
@@ -1247,6 +1254,9 @@
             currentRange = range;
             isAutoRefresh = (range === 'today');
 
+            // Preis-History bei Range-Wechsel leeren
+            priceHistory.clear();
+
             // Update button states
             document.querySelectorAll('[id^="range-"]').forEach(btn => btn.classList.remove('active'));
             document.getElementById('range-' + range).classList.add('active');
@@ -1376,6 +1386,12 @@
                 // Also try to fetch the latest snapshot for the cards
                 await fetchLatestSnapshot();
 
+                // Fetch current Si price
+                await fetchPriceData();
+
+                // Chart aktualisieren mit neuen Preis-Daten
+                updateChart();
+
             } catch (error) {
                 console.error('Error fetching data:', error);
                 document.querySelector('.status-text').textContent = 'Ошибка';
@@ -1401,7 +1417,65 @@
                     processLatestSnapshot(data.futoi);
                 }
             } catch (e) {
-                // Silent fail for snapshot
+                console.warn('Error fetching latest snapshot:', e);
+            }
+        }
+
+        // ──────────────────────────────────────────────
+        // Fetch current Si price from ISS API
+        // ──────────────────────────────────────────────
+        async function fetchPriceData() {
+            try {
+                // securities + marketdata zusammen abfragen
+                const response = await fetch(
+                    '/api/iss/engines/futures/markets/forts/securities.json?iss.meta=off&securities.columns=SECID,PREVSETTLEPRICE&marketdata.columns=SECID,LAST'
+                );
+                const data = await response.json();
+
+                let price = null;
+
+                // 1) Versuche LAST aus marketdata (während der Handelszeit)
+                if (data.marketdata && data.marketdata.data) {
+                    const columns = data.marketdata.columns;
+                    const secidIdx = columns.indexOf('SECID');
+                    const lastIdx = columns.indexOf('LAST');
+
+                    for (const row of data.marketdata.data) {
+                        const secid = row[secidIdx];
+                        const last = row[lastIdx];
+                        // Nur echte Si-Futures (4 Zeichen: "Si" + Buchstabe + Ziffer), keine Spreads
+                        if (secid && secid.length === 4 && secid.startsWith('Si') && last !== null && last > 0) {
+                            price = last;
+                            break;
+                        }
+                    }
+                }
+
+                // 2) Fallback: PREVSETTLEPRICE aus securities (außerhalb der Handelszeit)
+                if (price === null && data.securities && data.securities.data) {
+                    const columns = data.securities.columns;
+                    const secidIdx = columns.indexOf('SECID');
+                    const prevIdx = columns.indexOf('PREVSETTLEPRICE');
+
+                    for (const row of data.securities.data) {
+                        const secid = row[secidIdx];
+                        const prevSettle = row[prevIdx];
+                        if (secid && secid.length === 4 && secid.startsWith('Si') && prevSettle !== null && prevSettle > 0) {
+                            price = prevSettle;
+                            break;
+                        }
+                    }
+                }
+
+                // Preis speichern wenn gefunden (auf 5-Min-Intervall abgerundet, passend zu OI-Daten)
+                if (price !== null) {
+                    const now = getMoscowTime();
+                    const roundedMin = Math.floor(now.getMinutes() / 5) * 5;
+                    const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(roundedMin).padStart(2, '0')}`;
+                    priceHistory.set(key, price);
+                }
+            } catch (e) {
+                console.warn('Error fetching price data:', e);
             }
         }
 
@@ -1945,8 +2019,12 @@
             const labels = oiHistory.timestamps;
 
             oiChart.data.labels = labels;
-            // Price dataset (index 0) - empty for now, will be filled if price API available
-            oiChart.data.datasets[0].data = oiHistory.price.length ? oiHistory.price : [];
+            // Price dataset (index 0) - aus priceHistory mappen
+            const priceData = labels.map(ts => {
+                const key = `${ts.getFullYear()}-${String(ts.getMonth() + 1).padStart(2, '0')}-${String(ts.getDate()).padStart(2, '0')} ${String(ts.getHours()).padStart(2, '0')}:${String(ts.getMinutes()).padStart(2, '0')}`;
+                return priceHistory.get(key) || null;
+            });
+            oiChart.data.datasets[0].data = priceData;
             oiChart.data.datasets[1].data = oiHistory.fizLong;
             oiChart.data.datasets[2].data = oiHistory.fizShort;
             oiChart.data.datasets[3].data = oiHistory.yurLong;
