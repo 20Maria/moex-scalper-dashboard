@@ -16,6 +16,7 @@ import sys
 import io
 import hashlib
 import secrets
+import time
 from pathlib import Path
 
 # UTF-8 Ausgabe (Windows)
@@ -28,6 +29,7 @@ if sys.platform == 'win32':
 # ──────────────────────────────────────────────
 PORT = int(os.environ.get("PORT", 8081))
 HOST = os.environ.get("HOST", "0.0.0.0")
+START_TIME = time.time()
 
 # MOEX API
 MOEX_API_BASE = "https://apim.moex.com/iss/analyticalproducts/futoi"
@@ -205,6 +207,11 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.end_headers()
             return
 
+        # Health-Check (kein Auth nötig, für Monitoring/Load Balancer)
+        if self.path == '/health' or self.path == '/health/':
+            self.handle_health_check()
+            return
+
         # Login-Seite braucht keinen Auth
         if self.path == '/login' or self.path == '/login/':
             self.send_login_page()
@@ -282,6 +289,31 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(400)
             self.end_headers()
             print(f"[AUTH] Error: {e}")
+
+    # ── Health Check ──
+
+    def handle_health_check(self):
+        """GET /health — Status für Monitoring und schnelles Debugging."""
+        uptime = time.time() - START_TIME
+        hours, remainder = divmod(int(uptime), 3600)
+        minutes, seconds = divmod(remainder, 60)
+
+        status = {
+            "status": "ok",
+            "uptime": f"{hours}h {minutes}m {seconds}s",
+            "uptime_seconds": int(uptime),
+            "api_key": "configured" if API_KEY else "missing",
+            "auth": "enabled" if ACCESS_TOKEN else "disabled",
+            "port": PORT,
+            "python": sys.version.split()[0],
+            "timestamp": time.strftime("%Y-%m-%dT%H:%M:%S"),
+        }
+
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Cache-Control', 'no-cache')
+        self.end_headers()
+        self.wfile.write(json.dumps(status, indent=2).encode('utf-8'))
 
     # ── CORS ──
 
