@@ -13,6 +13,10 @@ __pycache__/
 .idea/
 *.swp
 
+# Virtual Environment
+.venv/
+venv/
+
 # OS
 Thumbs.db
 .DS_Store
