@@ -209,6 +209,15 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
 
 
 # ──────────────────────────────────────────────
+# Threaded Server (handles multiple requests concurrently)
+# ──────────────────────────────────────────────
+class ThreadedTCPServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
+    """Multi-threaded TCP server so slow API calls don't block other requests."""
+    daemon_threads = True
+    allow_reuse_address = True
+
+
+# ──────────────────────────────────────────────
 # Request Handler
 # ──────────────────────────────────────────────
 class ProxyHandler(http.server.SimpleHTTPRequestHandler):
@@ -217,6 +226,15 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         # Statische Dateien immer aus dem Script-Verzeichnis laden
         super().__init__(*args, directory=str(SCRIPT_DIR), **kwargs)
+
+    def handle(self):
+        """Override to catch BrokenPipeError (client disconnects mid-request)."""
+        try:
+            super().handle()
+        except BrokenPipeError:
+            pass  # Client closed connection (e.g. page refresh) — ignore
+        except ConnectionResetError:
+            pass  # Client reset connection — ignore
 
     def do_GET(self):
         # Favicon: leere Antwort, kein 404 in den Logs
@@ -419,6 +437,9 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         except urllib.error.URLError as e:
             print(f"[ERROR] Network: {e.reason}")
             self.send_error_response(503, "Network error")
+        except TimeoutError:
+            print(f"[ERROR] Timeout calling MOEX API (>30s)")
+            self.send_error_response(504, "MOEX API timeout")
         except Exception as e:
             print(f"[ERROR] {e}")
             self.send_error_response(500, str(e))
@@ -447,10 +468,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 def run_server():
     load_api_key()
 
-    socketserver.TCPServer.allow_reuse_address = True
-
     try:
-        httpd = socketserver.TCPServer((HOST, PORT), ProxyHandler)
+        httpd = ThreadedTCPServer((HOST, PORT), ProxyHandler)
     except OSError as e:
         print(f"[ERROR] Port {PORT} ist bereits belegt: {e}")
         print(f"        Starte mit: PORT=8082 python server.py")
