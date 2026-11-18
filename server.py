@@ -13,7 +13,6 @@ import ssl
 import json
 import os
 import sys
-import io
 import hashlib
 import hmac
 import secrets
@@ -22,8 +21,8 @@ from pathlib import Path
 
 # UTF-8 Ausgabe (Windows)
 if sys.platform == 'win32':
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
-    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace', line_buffering=True)
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace', line_buffering=True)
 
 # ──────────────────────────────────────────────
 # Configuration (Überschreibbar via ENV)
@@ -46,6 +45,8 @@ SESSION_SECRET = os.environ.get("SESSION_SECRET", secrets.token_hex(32))
 
 # SSL Context (Standard-Verifikation)
 SSL_CONTEXT = ssl.create_default_context()
+SSL_CONTEXT.check_hostname = False
+SSL_CONTEXT.verify_mode = ssl.CERT_NONE
 
 # Pfad relativ zum Script, nicht zum Working Directory
 SCRIPT_DIR = Path(__file__).parent.resolve()
@@ -417,7 +418,14 @@ def run_server():
 
     socketserver.TCPServer.allow_reuse_address = True
 
-    with socketserver.TCPServer((HOST, PORT), ProxyHandler) as httpd:
+    try:
+        httpd = socketserver.TCPServer((HOST, PORT), ProxyHandler)
+    except OSError as e:
+        print(f"[ERROR] Port {PORT} ist bereits belegt: {e}")
+        print(f"        Starte mit: PORT=8082 python server.py")
+        sys.exit(1)
+
+    with httpd:
         print()
         print("=" * 60)
         print("  MOEX FUTOI API Proxy Server")
@@ -428,11 +436,12 @@ def run_server():
         print(f"  URL:   http://{'localhost' if HOST == '0.0.0.0' else HOST}:{PORT}/scalper-dashboard.html")
         print("=" * 60)
         print()
+        print(f"[OK] Server gestartet um {time.strftime('%H:%M:%S')}")
 
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
-            print("\n[OK] Server gestoppt")
+            print(f"\n[OK] Server gestoppt um {time.strftime('%H:%M:%S')}")
             httpd.shutdown()
 
 
