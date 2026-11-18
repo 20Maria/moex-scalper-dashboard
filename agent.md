@@ -9,4 +9,7 @@
 - Python Proxy-Server (`server.py`) + Single-Page Frontend (`scalper-dashboard.html`)
 - Deployed auf Render.com
 - API: MOEX Algopack FUTOI (Futures Open Interest)
-- Sprache: UI auf Russisch, Code-Kommentare gemischt Deutsch/Englisch
+## Sprache / Language Rules
+- **UI (user-facing)**: Russisch — alles was der Endnutzer sieht (HTML, Buttons, Labels, Fehlermeldungen im Frontend)
+- **Code**: Englisch — Variablen, Funktionen, Klassen, Kommentare, Commits
+- **Dokumentation**: Englisch oder Deutsch — README, DEPLOY, ROLLBACK, agent.md
