@@ -1,7 +1,9 @@
 services:
+  # ── PRODUCTION (main Branch) ──
   - type: web
     name: moex-scalper-dashboard
     runtime: python
+    branch: main
     buildCommand: pip install -r requirements.txt
     startCommand: python server.py
     envVars:
@@ -11,3 +13,18 @@ services:
         sync: false          # Passwort für den Zugangsschutz
       - key: SESSION_SECRET
         generateValue: true  # Wird automatisch generiert
+
+  # ── STAGING (dev Branch) ──
+  - type: web
+    name: moex-staging
+    runtime: python
+    branch: dev
+    buildCommand: pip install -r requirements.txt
+    startCommand: python server.py
+    envVars:
+      - key: MOEX_API_KEY
+        sync: false
+      - key: ACCESS_TOKEN
+        sync: false          # Kann gleiches oder anderes Passwort sein
+      - key: SESSION_SECRET
+        generateValue: true
