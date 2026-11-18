@@ -104,6 +104,12 @@
             font-weight: 600;
         }
 
+        .chart-btn-disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         .chart-canvas-wrapper {
             position: relative;
             width: 100%;
@@ -512,9 +518,9 @@
                     <!-- Time range buttons -->
                     <button class="chart-btn active" onclick="setChartRange('today')" id="range-today" title="Сегодня">Сегодня</button>
                     <button class="chart-btn" onclick="setChartRange('yesterday')" id="range-yesterday" title="Вчера">Вчера</button>
-                    <button class="chart-btn" onclick="setChartRange('3days')" id="range-3days" title="Последние 3 дня">3 дня</button>
-                    <button class="chart-btn" onclick="setChartRange('week')" id="range-week" title="Последняя неделя">Неделя</button>
-                    <button class="chart-btn" onclick="setChartRange('2weeks')" id="range-2weeks" title="Последние 2 недели">2 нед</button>
+                    <button class="chart-btn chart-btn-disabled" disabled title="В разработке">3 дня</button>
+                    <button class="chart-btn chart-btn-disabled" disabled title="В разработке">Неделя</button>
+                    <button class="chart-btn chart-btn-disabled" disabled title="В разработке">2 нед</button>
                     
                     <span style="color: #3d4559; margin: 0 4px;">|</span>
                     
@@ -902,10 +908,8 @@
                 
                 case 'today':
                 default:
-                    const todayDate = new Date(moscowTime);
-                    todayDate.setDate(todayDate.getDate() - 1); // Include yesterday in case today has no data yet
-                    fromDate = getMoscowDate(todayDate);
-                    return { from: fromDate, till: today };
+                    // Nur heutige Daten anfragen — kein gestriger Fallback mehr
+                    return { from: today, till: today };
             }
         }
 
@@ -1116,6 +1120,26 @@
                 } else if (clgroup === 'YUR') {
                     entry.yurLong = posLong;
                     entry.yurShort = Math.abs(posShort);
+                }
+            }
+
+            // ── Filter by selected range (safety net) ──
+            // Für "today" und "yesterday" nur Daten des jeweiligen Tages behalten,
+            // damit keine gestrigen/heutigen Daten in den Chart rutschen.
+            const moscowNow = getMoscowTime();
+            const todayStr = getMoscowDate(moscowNow);
+            if (currentRange === 'today') {
+                for (const key of Array.from(timeMap.keys())) {
+                    const rowDate = key.split(' ')[0];
+                    if (rowDate !== todayStr) timeMap.delete(key);
+                }
+            } else if (currentRange === 'yesterday') {
+                const yestDate = new Date(moscowNow);
+                yestDate.setDate(yestDate.getDate() - 1);
+                const yestStr = getMoscowDate(yestDate);
+                for (const key of Array.from(timeMap.keys())) {
+                    const rowDate = key.split(' ')[0];
+                    if (rowDate !== yestStr) timeMap.delete(key);
                 }
             }
 
@@ -1350,8 +1374,8 @@
                             backgroundColor: 'rgba(224, 224, 224, 0.05)',
                             borderWidth: 2,
                             pointRadius: 0,
-                            pointHoverRadius: 4,
-                            tension: 0.3,
+                            pointHoverRadius: 5,
+                            tension: 0.1,
                             yAxisID: 'yPrice',
                             hidden: false,
                             order: 5
@@ -1363,8 +1387,8 @@
                             backgroundColor: 'rgba(102, 187, 106, 0.08)',
                             borderWidth: 2.5,
                             pointRadius: 0,
-                            pointHoverRadius: 4,
-                            tension: 0.3,
+                            pointHoverRadius: 5,
+                            tension: 0.1,
                             fill: false,
                             yAxisID: 'yOI',
                             order: 4
@@ -1377,8 +1401,8 @@
                             borderWidth: 2,
                             borderDash: [6, 3],
                             pointRadius: 0,
-                            pointHoverRadius: 4,
-                            tension: 0.3,
+                            pointHoverRadius: 5,
+                            tension: 0.1,
                             fill: false,
                             yAxisID: 'yOI',
                             order: 3
@@ -1390,8 +1414,8 @@
                             backgroundColor: 'rgba(239, 83, 80, 0.08)',
                             borderWidth: 2.5,
                             pointRadius: 0,
-                            pointHoverRadius: 4,
-                            tension: 0.3,
+                            pointHoverRadius: 5,
+                            tension: 0.1,
                             fill: false,
                             yAxisID: 'yOI',
                             order: 2
@@ -1404,8 +1428,8 @@
                             borderWidth: 2,
                             borderDash: [6, 3],
                             pointRadius: 0,
-                            pointHoverRadius: 4,
-                            tension: 0.3,
+                            pointHoverRadius: 5,
+                            tension: 0.1,
                             fill: false,
                             yAxisID: 'yOI',
                             order: 1
@@ -1502,6 +1526,15 @@
                                 color: 'rgba(255, 255, 255, 0.04)',
                                 drawBorder: false
                             },
+                            // Engere Skalierung: nur sichtbare Preisdaten + Padding
+                            afterDataLimits: function(axis) {
+                                const range = axis.max - axis.min;
+                                if (range > 0) {
+                                    const padding = range * 0.15;
+                                    axis.min = axis.min - padding;
+                                    axis.max = axis.max + padding;
+                                }
+                            },
                             ticks: {
                                 color: '#e0e0e0',
                                 font: { size: 11, family: "'Consolas', monospace" },
@@ -1520,6 +1553,17 @@
                             grid: {
                                 drawOnChartArea: false,
                                 drawBorder: false
+                            },
+                            // Dynamisch an die tatsächlichen Daten anpassen,
+                            // damit kleine OI-Änderungen sichtbar werden
+                            afterDataLimits: function(axis) {
+                                // 10% Padding oben und unten für bessere Lesbarkeit
+                                const range = axis.max - axis.min;
+                                if (range > 0) {
+                                    const padding = range * 0.1;
+                                    axis.min = axis.min - padding;
+                                    axis.max = axis.max + padding;
+                                }
                             },
                             ticks: {
                                 color: '#90a4ae',
