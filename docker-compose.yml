@@ -1,0 +1,20 @@
+services:
+  # ── MOEX Scalper Dashboard Server ──
+  server:
+    build: .
+    ports:
+      - "8081:8081"
+    environment:
+      - PORT=8081
+      - MOEX_API_KEY=${MOEX_API_KEY}
+      - ACCESS_TOKEN=${ACCESS_TOKEN}
+      - SESSION_SECRET=${SESSION_SECRET:-}
+    restart: unless-stopped
+
+  # ── Cloudflare Tunnel (public URL) ──
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate --url http://server:8081
+    depends_on:
+      - server
+    restart: unless-stopped

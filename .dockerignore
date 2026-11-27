@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Secrets
+api_key.txt
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Git
+.git/
+.gitignore
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Docs (not needed in container)
+DEPLOY.md
+ROLLBACK.md
+INSTALLATION.md
+agent.md
